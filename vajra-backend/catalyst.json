@@ -10,9 +10,5 @@
       "agent_orchestrator",
       "fir_ingest_event"
     ]
-  },
-  "client": {
-    "source": "client",
-    "targets": []
   }
 }

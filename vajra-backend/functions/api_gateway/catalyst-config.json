@@ -1,5 +1,11 @@
 {
-  "name": "api_gateway",
-  "runtime": "node22",
-  "type": "AdvancedIO"
+  "deployment": {
+    "name": "api_gateway",
+    "stack": "node18",
+    "type": "AdvancedIO",
+    "memory": 256
+  },
+  "execution": {
+    "main": "index.js"
+  }
 }

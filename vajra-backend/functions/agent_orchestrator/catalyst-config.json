@@ -1,5 +1,11 @@
 {
-  "name": "agent_orchestrator",
-  "runtime": "node22",
-  "type": "BasicIO"
+  "deployment": {
+    "name": "agent_orchestrator",
+    "stack": "node18",
+    "type": "BasicIO",
+    "memory": 512
+  },
+  "execution": {
+    "main": "index.js"
+  }
 }
