@@ -1,5 +1,5 @@
 {
   "name": "agent_orchestrator",
   "runtime": "node22",
-  "type": "basic"
+  "type": "BasicIO"
 }

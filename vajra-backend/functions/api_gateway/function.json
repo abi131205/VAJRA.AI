@@ -1,5 +1,5 @@
 {
   "name": "api_gateway",
   "runtime": "node22",
-  "type": "advanced"
+  "type": "AdvancedIO"
 }
