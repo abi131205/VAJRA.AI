@@ -9,5 +9,9 @@
       "api_gateway",
       "agent_orchestrator"
     ]
+  },
+  "client": {
+    "source": "client",
+    "targets": []
   }
 }
