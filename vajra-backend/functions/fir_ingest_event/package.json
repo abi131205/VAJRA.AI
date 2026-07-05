@@ -1,0 +1,13 @@
+{
+  "name": "fir_ingest_event",
+  "version": "1.0.0",
+  "description": "Catalyst Signal-triggered Basic I/O function: Zia OCR pipeline for FIR document ingestion into QuickML RAG Knowledge Base",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "zcatalyst-sdk-node": "^1.0.0"
+  }
+}
