@@ -5,8 +5,16 @@
   },
   "functions": {
     "targets": [
-      "api_gateway",
-      "agent_orchestrator"
+      {
+        "name": "api_gateway",
+        "type": "advanced",
+        "path": "functions/api_gateway"
+      },
+      {
+        "name": "agent_orchestrator",
+        "type": "basic",
+        "path": "functions/agent_orchestrator"
+      }
     ]
   }
 }
