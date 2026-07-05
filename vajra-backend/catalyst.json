@@ -4,6 +4,7 @@
     "id": "47775000000013025"
   },
   "functions": {
+    "source": "functions",
     "targets": [
       "api_gateway",
       "agent_orchestrator"
