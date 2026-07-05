@@ -4,17 +4,10 @@
     "id": "project_prod_vajra_001"
   },
   "functions": {
+    "source": "functions",
     "targets": [
-      {
-        "name": "api_gateway",
-        "type": "advanced",
-        "path": "functions/api_gateway"
-      },
-      {
-        "name": "agent_orchestrator",
-        "type": "basic",
-        "path": "functions/agent_orchestrator"
-      }
+      "api_gateway",
+      "agent_orchestrator"
     ]
   }
 }
