@@ -1,10 +1,9 @@
 {
   "project": {
-    "name": "VajraAIV4",
-    "id": "project_prod_vajra_001"
+    "name": "Project-Rainfall",
+    "id": "47775000000013025"
   },
   "functions": {
-    "source": "functions",
     "targets": [
       "api_gateway",
       "agent_orchestrator"
