@@ -1,7 +1,7 @@
 {
   "deployment": {
     "name": "agent_orchestrator",
-    "stack": "nodejs18",
+    "stack": "node18",
     "type": "BasicIO",
     "memory": 512
   },

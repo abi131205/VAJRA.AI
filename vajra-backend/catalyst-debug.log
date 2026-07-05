@@ -1,9 +1,0 @@
-[debug] [2026-07-05T07:16:27.473Z] : 
-[debug] [2026-07-05T07:16:27.475Z] : ----------------------------------------------------------------------
-[debug] [2026-07-05T07:16:27.476Z] : Command:      C:\Program Files\nodejs\node.exe C:\Users\DELL\AppData\Roaming\npm\node_modules\zcatalyst-cli\lib\bin\catalyst.js deploy --verbose
-[debug] [2026-07-05T07:16:27.476Z] : CLI Version:  1.26.2
-[debug] [2026-07-05T07:16:27.477Z] : Platform:     win32
-[debug] [2026-07-05T07:16:27.477Z] : Node Version: v22.15.1
-[debug] [2026-07-05T07:16:27.477Z] : Time:         Sun Jul 05 2026 12:46:27 GMT+0530 (India Standard Time)
-[debug] [2026-07-05T07:16:27.478Z] : ----------------------------------------------------------------------
-[debug] [2026-07-05T07:16:27.478Z] : 

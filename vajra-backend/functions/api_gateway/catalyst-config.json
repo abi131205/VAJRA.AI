@@ -1,7 +1,7 @@
 {
   "deployment": {
     "name": "api_gateway",
-    "stack": "nodejs18",
+    "stack": "node18",
     "type": "AdvancedIO",
     "memory": 256
   },
