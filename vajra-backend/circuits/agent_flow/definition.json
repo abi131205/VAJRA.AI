@@ -1,0 +1,68 @@
+{
+  "Comment": "VAJRA.AI V4 Multi-Agent State Machine Choreography",
+  "StartAt": "AgentOrchestrator",
+  "States": {
+    "AgentOrchestrator": {
+      "Type": "Task",
+      "Resource": "function:agent_orchestrator",
+      "Next": "RouteSpecialistAgent"
+    },
+    "RouteSpecialistAgent": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.task",
+          "StringEquals": "RECONSTRUCT_TIMELINE",
+          "Next": "TimelineAgent"
+        },
+        {
+          "Variable": "$.task",
+          "StringEquals": "MAP_LEGAL_SECTIONS",
+          "Next": "LegalAgent"
+        },
+        {
+          "Variable": "$.task",
+          "StringEquals": "QUERY_DATABASE",
+          "Next": "SQLAgent"
+        }
+      ],
+      "Default": "ConsensusAndAudit"
+    },
+    "TimelineAgent": {
+      "Type": "Task",
+      "Resource": "function:agent_orchestrator",
+      "Parameters": {
+        "task_type": "RECONSTRUCT_TIMELINE",
+        "payload.$": "$.payload"
+      },
+      "Next": "ConsensusAndAudit"
+    },
+    "LegalAgent": {
+      "Type": "Task",
+      "Resource": "function:agent_orchestrator",
+      "Parameters": {
+        "task_type": "MAP_LEGAL_SECTIONS",
+        "payload.$": "$.payload"
+      },
+      "Next": "ConsensusAndAudit"
+    },
+    "SQLAgent": {
+      "Type": "Task",
+      "Resource": "function:agent_orchestrator",
+      "Parameters": {
+        "task_type": "QUERY_DATABASE",
+        "payload.$": "$.payload"
+      },
+      "Next": "ConsensusAndAudit"
+    },
+    "ConsensusAndAudit": {
+      "Type": "Task",
+      "Resource": "function:agent_orchestrator",
+      "Parameters": {
+        "task_type": "AUDIT_LEDGER_POST",
+        "payload.$": "$.data"
+      },
+      "End": true
+    }
+  }
+}

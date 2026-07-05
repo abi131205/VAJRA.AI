@@ -1,0 +1,13 @@
+{
+  "name": "agent_orchestrator",
+  "version": "1.0.0",
+  "description": "Multi-agent coordination engine for VAJRA.AI V4 Zoho Catalyst Functions",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "zcatalyst-sdk-node": "^1.0.0"
+  }
+}

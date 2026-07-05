@@ -1,0 +1,12 @@
+{
+  "project": {
+    "name": "VajraAIV4",
+    "id": "project_prod_vajra_001"
+  },
+  "functions": {
+    "targets": [
+      "api_gateway",
+      "agent_orchestrator"
+    ]
+  }
+}

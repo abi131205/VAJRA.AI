@@ -1,0 +1,16 @@
+{
+  "functions": [
+    {
+      "name": "api_gateway",
+      "runtime": "nodejs18",
+      "memory": 256,
+      "timeout": 30
+    },
+    {
+      "name": "agent_orchestrator",
+      "runtime": "nodejs18",
+      "memory": 512,
+      "timeout": 60
+    }
+  ]
+}
