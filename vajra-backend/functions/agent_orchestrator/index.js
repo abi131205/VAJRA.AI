@@ -50,18 +50,24 @@ async function commitAuditEntry(catalystApp, { actor_id, case_id, action_type, p
         if (rows && rows.length > 0 && rows[0].audit_log?.entry_hash) {
             prev_hash = rows[0].audit_log.entry_hash;
         }
-        const raw        = `${prev_hash}|${actor_id}|${case_id}|${action_type}|${payloadJson}|${timestamp}`;
-        const entry_hash = crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
+        // FIX (Bug 4.1): compute payload_hash first, then use it in the pre-image.
+        // The verifier (auditService.verifyChain) reads the stored payload_hash column,
+        // so the commit routine must build entry_hash from payload_hash – not payloadJson.
+        const payload_hash = crypto.createHash('sha256').update(payloadJson, 'utf8').digest('hex');
+        const raw          = `${prev_hash}|${actor_id}|${case_id}|${action_type}|${payload_hash}|${timestamp}`;
+        const entry_hash   = crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
         await db.table('audit_log').insertRow({
             action_id, actor_id, case_id, action_type,
-            payload_hash: crypto.createHash('sha256').update(payloadJson, 'utf8').digest('hex'),
+            payload_hash,
             prev_hash, entry_hash, created_time: timestamp
         });
         return { action_id, entry_hash, prev_hash };
     } catch (err) {
         console.warn('[Orchestrator:AuditCommit] degraded:', err.message);
-        const raw        = `${prev_hash}|${actor_id}|${case_id}|${action_type}|${payloadJson}|${timestamp}`;
-        const entry_hash = crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
+        // FIX (Bug 4.1): degraded-mode path also uses payload_hash in pre-image.
+        const payload_hash = crypto.createHash('sha256').update(payloadJson, 'utf8').digest('hex');
+        const raw          = `${prev_hash}|${actor_id}|${case_id}|${action_type}|${payload_hash}|${timestamp}`;
+        const entry_hash   = crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
         return { action_id, entry_hash, prev_hash, degraded: true };
     }
 }
@@ -204,11 +210,13 @@ module.exports = async (context, basicIO) => {
 
             case 'TRANSLATE_IF_KN': {
                 const agent = new TranslationAgent(catalystApp);
-                // payload here is the array of parallel branch results
-                const query = typeof payload === 'object' && payload.query
-                    ? payload.query
-                    : JSON.stringify(payload);
-                const translation = await agent.translateIfKannada(query, lang);
+                // FIX (Bug 4.2): payload at this stage is the array of parallel-branch
+                // results. Passing JSON.stringify(payload) forces Zia NMT to translate
+                // raw JSON syntax (keys, brackets, etc.), corrupting the output.
+                // Instead, read the original user query string directly from the Circuit
+                // arguments, which is always a plain-text string safe for NMT translation.
+                const originalQuery = basicIO.getArgument('query') || '';
+                const translation   = await agent.translateIfKannada(originalQuery, lang);
                 result = translation;
                 break;
             }

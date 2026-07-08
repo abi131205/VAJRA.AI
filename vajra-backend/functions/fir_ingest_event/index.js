@@ -55,19 +55,25 @@ async function commitAuditEntry(catalystApp, { actor_id, case_id, action_type, p
         if (rows && rows.length > 0 && rows[0].audit_log?.entry_hash) {
             prev_hash = rows[0].audit_log.entry_hash;
         }
-        const raw        = `${prev_hash}|${actor_id}|${case_id}|${action_type}|${payloadJson}|${timestamp}`;
-        const entry_hash = crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
+        // FIX (Bug 4.1): compute payload_hash first, then build pre-image using
+        // payload_hash so the verifier (auditService.verifyChain) can recompute
+        // the same entry_hash from the stored payload_hash column.
+        const payload_hash = crypto.createHash('sha256').update(payloadJson, 'utf8').digest('hex');
+        const raw          = `${prev_hash}|${actor_id}|${case_id}|${action_type}|${payload_hash}|${timestamp}`;
+        const entry_hash   = crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
         await db.table('audit_log').insertRow({
             action_id, actor_id, case_id, action_type,
-            payload_hash: crypto.createHash('sha256').update(payloadJson, 'utf8').digest('hex'),
+            payload_hash,
             prev_hash, entry_hash, created_time: timestamp
         });
         console.info(`[FIRIngest:Audit] Committed: ${action_id} | ...${prev_hash.slice(-8)} → ${entry_hash.slice(-8)}`);
         return { action_id, entry_hash };
     } catch (err) {
         console.warn('[FIRIngest:Audit] Degraded mode (DB write failed):', err.message);
-        const raw        = `${prev_hash}|${actor_id}|${case_id}|${action_type}|${payloadJson}|${timestamp}`;
-        const entry_hash = crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
+        // FIX (Bug 4.1): degraded-mode path must also use payload_hash in pre-image.
+        const payload_hash = crypto.createHash('sha256').update(payloadJson, 'utf8').digest('hex');
+        const raw          = `${prev_hash}|${actor_id}|${case_id}|${action_type}|${payload_hash}|${timestamp}`;
+        const entry_hash   = crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
         return { action_id, entry_hash, degraded: true };
     }
 }

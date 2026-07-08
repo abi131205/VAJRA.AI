@@ -429,61 +429,92 @@ export const useStore = create((set, get) => ({
       return result;
     }
 
-    // Real upload via XHR for progress tracking
+    // Real upload: read file as Base64 and POST a JSON payload.
+    // The backend evidenceController parses req.body with express.json() only;
+    // multipart/form-data is not supported. Converting to Base64+JSON avoids the
+    // need for a multer/busboy dependency on the server side (Bug 4.3 fix).
     return new Promise((resolve, reject) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('case_id', caseId);
-      formData.append('evidence_type', 'DOCUMENT');
-      formData.append('uploaded_by', useStore.getState().user?.id || '');
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
 
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${API}/evidence/upload`);
-      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) set({ uploadProgress: Math.round((e.loaded / e.total) * 100) });
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          // FileReader progress counts toward the "reading" phase; show up to 40 %
+          // so the user sees movement before the network request starts.
+          set({ uploadProgress: Math.round((e.loaded / e.total) * 40) });
+        }
       };
 
-      xhr.onload = async () => {
+      reader.onerror = () => {
+        set({ uploadStatus: 'error' });
+        reject(new Error('FileReader failed to read the file.'));
+      };
+
+      reader.onload = async () => {
         try {
-          const data = JSON.parse(xhr.responseText);
-          if (xhr.status >= 200 && xhr.status < 300) {
-            set({ uploadStatus: 'processing' });
-            // Poll for OCR completion
-            const evidenceId = data.evidence_id;
-            let attempts = 0;
-            const poll = async () => {
-              if (attempts++ > 15) {
-                set({ uploadStatus: 'complete', uploadResult: data });
-                resolve(data);
-                return;
-              }
-              const res = await axios.get(`${API}/evidence/${evidenceId}/status`, {
-                headers: { Authorization: `Bearer ${token}` }
+          // reader.result is a data URL: "data:<mime>;base64,<encoded>"
+          // Strip the prefix to obtain the raw Base64 string.
+          const base64Str = reader.result.split(',')[1];
+          set({ uploadProgress: 50 });
+
+          const res = await axios.post(
+            `${API}/evidence/upload`,
+            {
+              case_id:       caseId,
+              evidence_type: 'DOCUMENT',
+              fileName:      file.name,
+              fileBase64:    base64Str,
+              uploaded_by:   useStore.getState().user?.id || 'SYSTEM',
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              onUploadProgress: (e) => {
+                if (e.lengthComputable) {
+                  // Map network progress from 50–100 %
+                  set({ uploadProgress: 50 + Math.round((e.loaded / e.total) * 50) });
+                }
+              },
+            }
+          );
+
+          const data = res.data;
+          set({ uploadStatus: 'processing', uploadProgress: 100 });
+
+          // Poll for OCR / processing completion
+          const evidenceId = data.evidence_id;
+          let attempts = 0;
+          const poll = async () => {
+            if (attempts++ > 15) {
+              set({ uploadStatus: 'complete', uploadResult: data });
+              resolve(data);
+              return;
+            }
+            try {
+              const statusRes = await axios.get(`${API}/evidence/${evidenceId}/status`, {
+                headers: { Authorization: `Bearer ${token}` },
               });
-              if (res.data.status === 'PROCESSED') {
+              if (statusRes.data.status === 'PROCESSED') {
                 set(s => ({
-                  uploadStatus: 'complete', uploadResult: res.data,
-                  timeline: [...s.timeline, ...(res.data.extracted_timeline || [])],
+                  uploadStatus:  'complete',
+                  uploadResult:  statusRes.data,
+                  timeline:      [...s.timeline, ...(statusRes.data.extracted_timeline || [])],
                 }));
                 addNotification(`OCR complete — evidence ${evidenceId} processed.`);
-                resolve(res.data);
+                resolve(statusRes.data);
               } else {
                 setTimeout(poll, 2000);
               }
-            };
-            poll();
-          } else {
-            throw new Error(data.error || 'Upload failed');
-          }
-        } catch (e) {
+            } catch (pollErr) {
+              // Non-fatal: retry until attempt limit
+              setTimeout(poll, 2000);
+            }
+          };
+          poll();
+        } catch (uploadErr) {
           set({ uploadStatus: 'error' });
-          reject(e);
+          reject(uploadErr);
         }
       };
-      xhr.onerror = () => { set({ uploadStatus: 'error' }); reject(new Error('Network error')); };
-      xhr.send(formData);
     });
   },
 

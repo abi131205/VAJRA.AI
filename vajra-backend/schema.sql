@@ -57,3 +57,81 @@ CREATE TABLE audit_log (
 -- Backward-compatibility alias: audit_ledger is retained in code references
 -- but the canonical table name in this schema is audit_log.
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Extended Schema: Jurisdiction, Persons, Vehicles, CDR, Predictions
+-- (Appended per audit report section 2.1)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Table: stations (Jurisdiction Reference)
+CREATE TABLE stations (
+    ROWID BIGINT,
+    station_id VARCHAR(64) UNIQUE,
+    name VARCHAR(200) NOT NULL,
+    district VARCHAR(100) NOT NULL,
+    range_name VARCHAR(100),
+    latitude DECIMAL(9,6),
+    longitude DECIMAL(9,6),
+    contact VARCHAR(20),
+    created_time DATETIME
+);
+
+-- Table: persons (Suspects, Victims, Witnesses)
+CREATE TABLE persons (
+    ROWID BIGINT,
+    person_id VARCHAR(64) UNIQUE,
+    name VARCHAR(200) NOT NULL,
+    aliases VARCHAR(1000),        -- JSON array representation of aliases
+    dob DATE,
+    gender VARCHAR(16),           -- M, F, Other, Unknown
+    address VARCHAR(2000),
+    aadhaar_hash CHAR(64),        -- SHA-256 of Aadhaar; never store raw Aadhaar
+    risk_score DOUBLE PRECISION DEFAULT 0.0,
+    photo_stratus_url VARCHAR(512),
+    created_time DATETIME
+);
+
+-- Table: case_persons (Case-Person Junction Table)
+CREATE TABLE case_persons (
+    ROWID BIGINT,
+    id VARCHAR(64) UNIQUE,
+    case_id VARCHAR(64),
+    person_id VARCHAR(64),
+    role VARCHAR(32)              -- ACCUSED, VICTIM, WITNESS, INFORMANT
+);
+
+-- Table: vehicles
+CREATE TABLE vehicles (
+    ROWID BIGINT,
+    vehicle_id VARCHAR(64) UNIQUE,
+    reg_no VARCHAR(32) UNIQUE,
+    type VARCHAR(64),
+    owner_person_id VARCHAR(64)
+);
+
+-- Table: phone_records (CDR / Call Data Records)
+CREATE TABLE phone_records (
+    ROWID BIGINT,
+    record_id VARCHAR(64) UNIQUE,
+    person_id VARCHAR(64),
+    phone_number VARCHAR(16),
+    carrier VARCHAR(64),
+    last_seen_lat DECIMAL(9,6),
+    last_seen_lng DECIMAL(9,6)
+);
+
+-- Table: predictions (QuickML crime hotspot forecast outputs)
+CREATE TABLE predictions (
+    ROWID BIGINT,
+    prediction_id VARCHAR(64) UNIQUE,
+    district VARCHAR(100) NOT NULL,
+    grid_cell_id VARCHAR(32),
+    crime_type VARCHAR(64),
+    predicted_count INT,
+    confidence DOUBLE PRECISION,
+    window_start DATETIME,
+    window_end DATETIME,
+    model_version VARCHAR(32),
+    shap_json VARCHAR(2000),      -- JSON-serialised SHAP feature importance
+    created_time DATETIME
+);
+

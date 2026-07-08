@@ -15,9 +15,9 @@ router.post('/login', async (req, res) => {
     try {
         const db = req.catalyst.datastore();
         
-        // Find officer record in Data Store
+        // Find officer record in Data Store by email address (login identifier)
         const queryResult = await db.executeQueries(
-            `SELECT ROWID, name, role, station_id, status FROM officers WHERE name = '${email}' LIMIT 1`
+            `SELECT ROWID, name, role, station_id, status FROM officers WHERE email = '${email}' LIMIT 1`
         );
 
         if (queryResult && queryResult.length > 0) {
