@@ -1,68 +1,216 @@
 {
-  "Comment": "VAJRA.AI V4 Multi-Agent State Machine Choreography",
-  "StartAt": "AgentOrchestrator",
+  "Comment": "VAJRA.AI V4 – vajra_investigation_circuit: Parallel intent branching with sequential Translate + MergeAndCite",
+  "StartAt": "IntentRouter",
   "States": {
-    "AgentOrchestrator": {
-      "Type": "Task",
-      "Resource": "function:agent_orchestrator",
-      "Next": "RouteSpecialistAgent"
-    },
-    "RouteSpecialistAgent": {
+
+    "IntentRouter": {
       "Type": "Choice",
+      "Comment": "Routes the incoming query to the appropriate parallel branch(es) based on classified intent.",
       "Choices": [
         {
-          "Variable": "$.task",
-          "StringEquals": "RECONSTRUCT_TIMELINE",
-          "Next": "TimelineAgent"
+          "Variable": "$.intent",
+          "StringEquals": "sql_query",
+          "Next": "ParallelAgentDispatch"
         },
         {
-          "Variable": "$.task",
-          "StringEquals": "MAP_LEGAL_SECTIONS",
-          "Next": "LegalAgent"
+          "Variable": "$.intent",
+          "StringEquals": "graph_query",
+          "Next": "ParallelAgentDispatch"
         },
         {
-          "Variable": "$.task",
-          "StringEquals": "QUERY_DATABASE",
-          "Next": "SQLAgent"
+          "Variable": "$.intent",
+          "StringEquals": "forecast_query",
+          "Next": "ParallelAgentDispatch"
+        },
+        {
+          "Variable": "$.intent",
+          "StringEquals": "rag_query",
+          "Next": "ParallelAgentDispatch"
         }
       ],
-      "Default": "ConsensusAndAudit"
+      "Default": "ParallelAgentDispatch"
     },
-    "TimelineAgent": {
+
+    "ParallelAgentDispatch": {
+      "Type": "Parallel",
+      "Comment": "Execute all 4 agent branches simultaneously. Branches that are not the primary intent return empty results quickly.",
+      "Branches": [
+
+        {
+          "Comment": "Branch 1 – SQL Query Agent",
+          "StartAt": "SQLQueryBranch",
+          "States": {
+            "SQLQueryBranch": {
+              "Type": "Task",
+              "Resource": "function:agent_orchestrator",
+              "Parameters": {
+                "task_type": "QUERY_DATABASE",
+                "payload.$": "$.query",
+                "intent.$": "$.intent",
+                "active_branch": "sql_query"
+              },
+              "Catch": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "Next": "SQLBranchFallback"
+                }
+              ],
+              "End": true
+            },
+            "SQLBranchFallback": {
+              "Type": "Pass",
+              "Result": { "branch": "sql_query", "data": [], "status": "FALLBACK" },
+              "End": true
+            }
+          }
+        },
+
+        {
+          "Comment": "Branch 2 – Graph / Entity Network Agent",
+          "StartAt": "GraphQueryBranch",
+          "States": {
+            "GraphQueryBranch": {
+              "Type": "Task",
+              "Resource": "function:agent_orchestrator",
+              "Parameters": {
+                "task_type": "RESOLVE_GRAPH",
+                "payload.$": "$.query",
+                "intent.$": "$.intent",
+                "active_branch": "graph_query"
+              },
+              "Catch": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "Next": "GraphBranchFallback"
+                }
+              ],
+              "End": true
+            },
+            "GraphBranchFallback": {
+              "Type": "Pass",
+              "Result": { "branch": "graph_query", "data": { "nodes": [], "edges": [] }, "status": "FALLBACK" },
+              "End": true
+            }
+          }
+        },
+
+        {
+          "Comment": "Branch 3 – Forecast / QuickML Agent",
+          "StartAt": "ForecastQueryBranch",
+          "States": {
+            "ForecastQueryBranch": {
+              "Type": "Task",
+              "Resource": "function:agent_orchestrator",
+              "Parameters": {
+                "task_type": "FORECAST_HOTSPOTS",
+                "payload.$": "$.query",
+                "intent.$": "$.intent",
+                "active_branch": "forecast_query"
+              },
+              "Catch": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "Next": "ForecastBranchFallback"
+                }
+              ],
+              "End": true
+            },
+            "ForecastBranchFallback": {
+              "Type": "Pass",
+              "Result": { "branch": "forecast_query", "data": { "hotspots": [] }, "status": "FALLBACK" },
+              "End": true
+            }
+          }
+        },
+
+        {
+          "Comment": "Branch 4 – RAG / Legal Knowledge Retrieval Agent",
+          "StartAt": "RAGQueryBranch",
+          "States": {
+            "RAGQueryBranch": {
+              "Type": "Task",
+              "Resource": "function:agent_orchestrator",
+              "Parameters": {
+                "task_type": "RAG_RETRIEVE",
+                "payload.$": "$.query",
+                "intent.$": "$.intent",
+                "active_branch": "rag_query"
+              },
+              "Catch": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "Next": "RAGBranchFallback"
+                }
+              ],
+              "End": true
+            },
+            "RAGBranchFallback": {
+              "Type": "Pass",
+              "Result": { "branch": "rag_query", "data": { "snippets": [] }, "status": "FALLBACK" },
+              "End": true
+            }
+          }
+        }
+
+      ],
+      "ResultPath": "$.parallel_results",
+      "Next": "TranslateIfKannada"
+    },
+
+    "TranslateIfKannada": {
       "Type": "Task",
+      "Comment": "Sequential step: Run Zia NMT if lang == kn. Pass-through otherwise.",
       "Resource": "function:agent_orchestrator",
       "Parameters": {
-        "task_type": "RECONSTRUCT_TIMELINE",
-        "payload.$": "$.payload"
+        "task_type": "TRANSLATE_IF_KN",
+        "payload.$": "$.parallel_results",
+        "lang.$": "$.lang",
+        "query.$": "$.query"
       },
-      "Next": "ConsensusAndAudit"
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.translate_error",
+          "Next": "MergeAndCite"
+        }
+      ],
+      "ResultPath": "$.translated_results",
+      "Next": "MergeAndCite"
     },
-    "LegalAgent": {
+
+    "MergeAndCite": {
       "Type": "Task",
+      "Comment": "Sequential step: Merge all parallel branch results, attach source citations, compute overall confidence.",
       "Resource": "function:agent_orchestrator",
       "Parameters": {
-        "task_type": "MAP_LEGAL_SECTIONS",
-        "payload.$": "$.payload"
+        "task_type": "MERGE_AND_CITE",
+        "payload.$": "$",
+        "session_id.$": "$.session_id",
+        "intent.$": "$.intent"
       },
-      "Next": "ConsensusAndAudit"
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.merge_error",
+          "Next": "AuditLedgerPost"
+        }
+      ],
+      "ResultPath": "$.merged_result",
+      "Next": "AuditLedgerPost"
     },
-    "SQLAgent": {
+
+    "AuditLedgerPost": {
       "Type": "Task",
-      "Resource": "function:agent_orchestrator",
-      "Parameters": {
-        "task_type": "QUERY_DATABASE",
-        "payload.$": "$.payload"
-      },
-      "Next": "ConsensusAndAudit"
-    },
-    "ConsensusAndAudit": {
-      "Type": "Task",
+      "Comment": "Final step: Commit a hash-chained audit log entry for this circuit execution.",
       "Resource": "function:agent_orchestrator",
       "Parameters": {
         "task_type": "AUDIT_LEDGER_POST",
-        "payload.$": "$.data"
+        "payload.$": "$.merged_result",
+        "session_id.$": "$.session_id",
+        "intent.$": "$.intent"
       },
       "End": true
     }
+
   }
 }

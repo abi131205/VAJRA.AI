@@ -11,6 +11,12 @@
       "runtime": "nodejs18",
       "memory": 512,
       "timeout": 60
+    },
+    {
+      "name": "fir_ingest_event",
+      "runtime": "nodejs18",
+      "memory": 256,
+      "timeout": 30
     }
   ]
 }
