@@ -71,12 +71,14 @@ To go live with real database queries and active AI API requests, execute these 
 
 ## 👥 Team Work Split & Repository Policy
 
+Team status as of July 12, 2026: 4 active contributors, deadline July 26, 2026 (Datathon 2026).
+
 ```mermaid
 graph TD
-    Repo[Git Repo: main] -->|Team Mate 1| AI[AI, OCR, Prompts & Forensic Data]
-    Repo -->|Team Mate 2| Fullstack[React, Zustand, Gateway & JWT Auth]
-    Repo -->|Team Mate 3| ML[Cosine Similarity & Admissibility Weights]
-    Repo -->|Team Mate 4| Viz[D3 Graph Compiler & Entity Resolution]
+    Repo[Git Repo: main] -->|Abijith| AI[AI, OCR, Prompts & Forensic Data]
+    Repo -->|Vishaal| Fullstack[React, Zustand, Gateway & JWT Auth]
+    Repo -->|Tej Aditya| ML[Cosine Similarity & Admissibility Weights]
+    Repo -->|Siddhika| Viz[D3 Graph Compiler & Entity Resolution]
 ```
 
 ### Git Branching Rules
@@ -86,18 +88,21 @@ graph TD
 
 ### Work Split Assignments
 
-#### 👤 Team Mate 1 (Lead & AI Architect)
+#### 👤 Abijith (Lead & AI Architect)
 *   **Focus**: Zia OCR Integration, LLM Connections, System Prompt layouts, and Forensic matching.
 *   **Source Files**: `evidenceController.js`, `timelineAgent.js`, `legalAgent.js`.
 
-#### 👤 Team Mate 2 (Fullstack Dev)
-*   **Focus**: React pages, Zustand store actions, API fetch integrations, and JWT bcrypt token verification.
+#### 👤 Vishaal (Fullstack Dev + Deployment Config)
+*   **Focus**: React pages, Zustand store actions, API fetch integrations, JWT bcrypt token verification, and Zoho Catalyst deployment config (sovereign cloud binding, environment/secrets setup).
 *   **Source Files**: `store.js`, `Login.jsx`, `Dashboard.jsx`, `authController.js`.
 
-#### 👤 Team Mate 3 (ML Specialist)
+#### 👤 Tej Aditya (ML Specialist)
 *   **Focus**: Cosine distance case comparison algorithms and trust reliability scoring.
 *   **Source Files**: `caseController.js`, `similarityService.js`.
+*   **Note**: Joining full-time from July 13 (exam commitment July 12).
 
-#### 👤 Team Mate 4 (Python / Viz Specialist)
+#### 👤 Siddhika (Python / Viz Specialist)
 *   **Focus**: Suspect/CDRs entity resolution graphs and D3/SVG network chart components.
 *   **Source Files**: `networkService.js`, `Dashboard.jsx`.
+*   **Note**: Rejoining the project from ~July 14.
+
