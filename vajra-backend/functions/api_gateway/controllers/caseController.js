@@ -136,7 +136,7 @@ router.get('/:case_number/timeline', async (req, res) => {
     try {
         const db = req.catalyst.datastore();
         const rows = await db.executeQueries(
-            `SELECT event_id, timestamp, title, description, evidence_source, confidence FROM timeline_events WHERE case_id = '${case_number}' ORDER BY timestamp ASC`
+            `SELECT event_id, event_time AS timestamp, title, description, evidence_source, confidence FROM timeline_events WHERE case_id = '${case_number}' ORDER BY event_time ASC`
         );
 
         if (rows && rows.length > 0) {

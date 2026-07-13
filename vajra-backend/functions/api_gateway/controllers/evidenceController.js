@@ -123,7 +123,7 @@ router.post('/upload', async (req, res) => {
                         event_id:        evt.event_id || `evt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
                         case_id,
                         evidence_id:     evidenceId,
-                        timestamp:       evt.timestamp || new Date().toISOString(),
+                        event_time:      evt.timestamp || new Date().toISOString(),
                         title:           evt.title || 'Extracted Event',
                         description:     evt.description || '',
                         evidence_source: evt.evidence_source || 'Zia OCR',

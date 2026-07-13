@@ -268,7 +268,7 @@ CREATE TABLE timeline_events (
     event_id VARCHAR(64) UNIQUE,
     case_id VARCHAR(64),
     evidence_id VARCHAR(64),
-    timestamp DATETIME,
+    event_time DATETIME,
     title VARCHAR(256),
     description VARCHAR(2000),
     evidence_source VARCHAR(128),
