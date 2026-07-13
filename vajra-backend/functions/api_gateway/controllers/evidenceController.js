@@ -83,7 +83,21 @@ router.post('/upload', async (req, res) => {
             }
         }
 
-        // ── 5. Insert record in `evidence` table ──────────────────────────────
+        // ── 5. Calculate Dynamic Trust Score ─────────────────────────────────
+        let computedTrust = 98.0;
+        if (!extractedText || extractedText.length < 50) {
+            computedTrust -= 15.0;
+        } else if (extractedText.length < 200) {
+            computedTrust -= 5.0;
+        }
+        if (!uploaded_by || uploaded_by === 'SYSTEM') {
+            computedTrust -= 4.0;
+        }
+        const hashInt = parseInt(sha256Hash.slice(0, 4), 16) || 0;
+        computedTrust += (hashInt % 5) - 2; // variance between -2 and +2
+        computedTrust = Math.max(40.0, Math.min(99.8, computedTrust));
+
+        // ── 6. Insert record in `evidence` table ──────────────────────────────
         const evidenceId  = `ev_${Date.now()}`;
         const evidenceRow = {
             evidence_id:   evidenceId,
@@ -92,7 +106,7 @@ router.post('/upload', async (req, res) => {
             file_url:      fileUrl,
             sha256_hash:   sha256Hash,
             uploaded_by:   uploaded_by || 'SYSTEM',
-            trust_score:   95.5
+            trust_score:   computedTrust
         };
 
         try {
@@ -101,8 +115,27 @@ router.post('/upload', async (req, res) => {
             console.warn('[EvidenceController] Evidence DB insert bypassed:', dbErr.message);
         }
 
-        // ── 6. Commit hash-chained audit entry via AuditService ───────────────
-        //    Uses the canonical `audit_log` table (NOT the deprecated `audit_ledger`)
+        // ── 7. Insert reconstructed timeline events into DataStore ───────────
+        if (parsedEvents && parsedEvents.length > 0) {
+            for (const evt of parsedEvents) {
+                try {
+                    await db.table('timeline_events').insertRow({
+                        event_id:        evt.event_id || `evt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                        case_id,
+                        evidence_id:     evidenceId,
+                        timestamp:       evt.timestamp || new Date().toISOString(),
+                        title:           evt.title || 'Extracted Event',
+                        description:     evt.description || '',
+                        evidence_source: evt.evidence_source || 'Zia OCR',
+                        confidence:      evt.confidence || 0.90
+                    });
+                } catch (tblErr) {
+                    console.warn('[EvidenceController] timeline_events insert bypassed:', tblErr.message);
+                }
+            }
+        }
+
+        // ── 8. Commit hash-chained audit entry via AuditService ───────────────
         try {
             await AuditService.commitAuditEntry(req.catalyst, {
                 actor_id:    uploaded_by || 'SYSTEM',
@@ -126,7 +159,7 @@ router.post('/upload', async (req, res) => {
             file_url:           fileUrl,
             status:             'PROCESSED',
             extracted_timeline: parsedEvents,
-            trust_score:        95.5
+            trust_score:        computedTrust
         });
 
     } catch (err) {

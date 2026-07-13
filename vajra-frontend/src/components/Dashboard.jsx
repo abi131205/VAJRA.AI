@@ -67,7 +67,7 @@ function CaseStatusBadge({ status }) {
 function SituationRoom() {
   const {
     cases, activeCase, timeline, networkData,
-    legalSections, fetchCases, setActiveCase, fetchLegalSections,
+    legalSections, similarCases, fetchCases, setActiveCase, fetchLegalSections, fetchSimilarCases,
     generatePDF, addNotification, notifications,
   } = useStore();
 
@@ -80,7 +80,10 @@ function SituationRoom() {
   useEffect(() => { fetchCases(); }, []);
 
   useEffect(() => {
-    if (activeCase) fetchLegalSections(activeCase.case_number);
+    if (activeCase) {
+      fetchLegalSections(activeCase.case_number);
+      fetchSimilarCases(activeCase.case_number);
+    }
   }, [activeCase]);
 
   const filteredCases = cases.filter(c =>
@@ -308,21 +311,23 @@ function SituationRoom() {
             </div>
 
             {/* MO Similarity */}
-            {timeline.length > 0 && (
+            {similarCases && similarCases.length > 0 && (
               <div>
                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>MO Similarity Match</div>
-                <div style={{ padding: '0.625rem 0.75rem', borderRadius: 6, background: 'var(--bg-elevated)', border: '1px solid var(--accent-border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)' }}>92% Match</span>
-                    <span style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>FIR 04/2025</span>
+                {similarCases.map(sim => (
+                  <div key={sim.case_number} style={{ padding: '0.625rem 0.75rem', borderRadius: 6, background: 'var(--bg-elevated)', border: '1px solid var(--accent-border)', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)' }}>{Math.round(sim.similarity_score * 100)}% Match</span>
+                      <span style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{sim.case_number}</span>
+                    </div>
+                    <div style={{ height: 4, background: 'var(--bg-border)', borderRadius: 2, marginBottom: 4, overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.round(sim.similarity_score * 100)}%`, height: '100%', background: 'var(--accent)', borderRadius: 2 }} />
+                    </div>
+                    <div style={{ fontSize: '0.5625rem', color: 'var(--text-muted)' }}>
+                      Shared: {sim.overlapping_keys && sim.overlapping_keys.length > 0 ? sim.overlapping_keys.join(', ') : 'None'}
+                    </div>
                   </div>
-                  <div style={{ height: 4, background: 'var(--bg-border)', borderRadius: 2, marginBottom: 4, overflow: 'hidden' }}>
-                    <div style={{ width: '92%', height: '100%', background: 'var(--accent)', borderRadius: 2 }} />
-                  </div>
-                  <div style={{ fontSize: '0.5625rem', color: 'var(--text-muted)' }}>
-                    Shared: midnight breach, lock damage, black truck footprint
-                  </div>
-                </div>
+                ))}
               </div>
             )}
 

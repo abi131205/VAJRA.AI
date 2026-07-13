@@ -539,6 +539,27 @@ export const useStore = create((set, get) => ({
     } catch { /* keep existing */ }
   },
 
+  // ── MO Similarity ────────────────────────────────────────
+  similarCases: [],
+  fetchSimilarCases: async (caseNumber) => {
+    const { mockMode } = get();
+    if (mockMode) {
+      set({
+        similarCases: [
+          { case_number: 'FIR_15_2026', title: 'Whitefield Vehicle Smuggling Ring', similarity_score: 0.92, overlapping_keys: ['robbery', 'midnight', 'truck'], summary: 'Intercepted container cargo carrying high-value parts...' }
+        ]
+      });
+      return;
+    }
+    try {
+      const { data } = await axios.get(`${API}/cases/${caseNumber}/similar`, {
+        headers: { Authorization: `Bearer ${get().token}` }
+      });
+      set({ similarCases: data });
+    } catch { /* keep existing */ }
+  },
+
+
   // ── SmartBrowz PDF ────────────────────────────────────────
   generatePDF: async () => {
     const { activeCase, mockMode, token, addNotification } = get();

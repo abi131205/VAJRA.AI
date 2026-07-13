@@ -44,42 +44,60 @@ class SQLAgent {
     }
 
     /**
-     * Builds safe, predefined SQL queries based on intent extraction
+     * Builds safe, predefined SQL queries based on intent extraction matching the KSP schema
      */
     buildSQLQuery(sanitizedText) {
         const queryLower = sanitizedText.toLowerCase();
         
-        // Search cases logic
-        if (queryLower.includes('case') || queryLower.includes('fir')) {
-            const statusMatch = queryLower.match(/\b(open|closed|under_investigation|charge_sheeted)\b/i);
-            if (statusMatch) {
-                return `SELECT case_number, title, status FROM cases WHERE status = '${statusMatch[1].toUpperCase()}'`;
-            }
-            return "SELECT case_number, title, status FROM cases";
+        // Search accused/suspects logic
+        if (queryLower.includes('accused') || queryLower.includes('suspect')) {
+            return "SELECT AccusedName, AgeYear, PersonID, CaseMasterID FROM Accused LIMIT 10";
         }
 
-        // Search officers logic
-        if (queryLower.includes('officer') || queryLower.includes('inspector')) {
-            return "SELECT name, role, station_id FROM officers WHERE status = 'ACTIVE'";
+        // Search victims logic
+        if (queryLower.includes('victim')) {
+            return "SELECT VictimName, AgeYear, CaseMasterID FROM Victim LIMIT 10";
+        }
+
+        // Search cases / FIRs logic
+        if (queryLower.includes('case') || queryLower.includes('fir') || queryLower.includes('crime')) {
+            return "SELECT CaseNo, CrimeNo, BriefFacts, CrimeRegisteredDate, CaseStatusID FROM CaseMaster LIMIT 10";
+        }
+
+        // Search officers/employees logic
+        if (queryLower.includes('officer') || queryLower.includes('employee') || queryLower.includes('inspector')) {
+            return "SELECT FirstName, KGID, email, status FROM Employee WHERE status = 'ACTIVE' LIMIT 10";
         }
 
         // Fallback standard queries
-        return "SELECT case_number, title, status FROM cases LIMIT 10";
+        return "SELECT CaseNo, CrimeNo, BriefFacts, CrimeRegisteredDate FROM CaseMaster LIMIT 5";
     }
 
     mockSearch(queryText) {
         const queryLower = queryText.toLowerCase();
         
-        if (queryLower.includes('officer')) {
+        if (queryLower.includes('officer') || queryLower.includes('inspector') || queryLower.includes('employee')) {
             return [
-                { officers: { name: "Rajesh Kumar", role: "INSPECTOR", station_id: "BLR_STN_04" } },
-                { officers: { name: "Sunil Gowda", role: "SUB_INSPECTOR", station_id: "BLR_STN_04" } }
+                { Employee: { FirstName: "Rajesh Kumar", KGID: "KGID98765", email: "inspector.rajesh@karnataka.gov.in" } },
+                { Employee: { FirstName: "Sunil Gowda", KGID: "KGID98766", email: "si.sunil@karnataka.gov.in" } }
             ];
         }
 
-        // Return mock case list
+        if (queryLower.includes('accused') || queryLower.includes('suspect')) {
+            return [
+                { Accused: { AccusedName: "Rajesh Kumar", AgeYear: 34, PersonID: "A1", CaseMasterID: 1 } }
+            ];
+        }
+
+        if (queryLower.includes('victim')) {
+            return [
+                { Victim: { VictimName: "Murugan R.", AgeYear: 45, CaseMasterID: 1 } }
+            ];
+        }
+
+        // Return mock case list matching KSP CaseMaster schema
         return [
-            { cases: { case_number: "FIR_12_2026", title: "Commercial Robbery", status: "UNDER_INVESTIGATION" } }
+            { CaseMaster: { CaseNo: "202600001", CrimeNo: "104430006202600001", BriefFacts: "Electronic City Commercial Robbery during midnight hours.", CrimeRegisteredDate: "2026-07-04T10:00:00.000Z", CaseStatusID: 2 } }
         ];
     }
 }

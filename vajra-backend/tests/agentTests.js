@@ -81,7 +81,7 @@ test('VAJRA SQL Agent - Injection Sanitization and Query Safe-building', (t) => 
     const caseQuery = "find cases with status open";
     const sql       = agent.buildSQLQuery(caseQuery);
     assert.strictEqual(sql.includes('SELECT'), true, "Should compile SELECT statements");
-    assert.strictEqual(sql.includes('cases'), true, "Should compile case database target table query");
+    assert.strictEqual(sql.includes('CaseMaster'), true, "Should compile case database target table query");
 });
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -262,4 +262,31 @@ test('VAJRA ChatController - Intent: rag_query default', (t) => {
     assert.strictEqual(classifyIntent('what BNS section applies to burglary?'), 'rag_query');
     assert.strictEqual(classifyIntent('explain admissibility of CCTV evidence'), 'rag_query');
     assert.strictEqual(classifyIntent(''),                                        'rag_query');
+});
+
+// ── NEW TESTS – SimilarityService ──────────────────────────────────────────
+test('VAJRA SimilarityService - Tokenization and Stop-word filtering', (t) => {
+    const SimilarityService = require('../functions/api_gateway/services/similarityService');
+    const simService = new SimilarityService();
+
+    const tokens = simService.tokenize("The suspect broke a door lock and stole a container truck.");
+    assert.ok(!tokens.includes('the'), 'Should remove stop-word "the"');
+    assert.ok(!tokens.includes('a'), 'Should remove stop-word "a"');
+    assert.ok(tokens.includes('suspect'), 'Should retain keyword "suspect"');
+    assert.ok(tokens.includes('truck'), 'Should retain keyword "truck"');
+});
+
+test('VAJRA SimilarityService - Cosine similarity calculation', (t) => {
+    const SimilarityService = require('../functions/api_gateway/services/similarityService');
+    const simService = new SimilarityService();
+
+    const desc1 = "Armed burglary at Electronic City storage locker facility involving a black truck.";
+    const desc2 = "Armed robbery at Whitefield warehouse locker row using a black logistics vehicle.";
+    const desc3 = "Cyber crime hotspot report regarding ATM skimming devices in Koramangala.";
+
+    const score1_2 = simService.compare(desc1, desc2);
+    const score1_3 = simService.compare(desc1, desc3);
+
+    assert.ok(score1_2 > 0.15, 'Similar MO cases should have a noticeable similarity score');
+    assert.ok(score1_2 > score1_3, 'Similar MO should score higher than an unrelated cyber crime case');
 });

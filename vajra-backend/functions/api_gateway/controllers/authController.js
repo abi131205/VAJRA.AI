@@ -1,5 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'vajra-ai-super-secret-key-12345';
 
 /**
  * @route POST /api/v1/auth/login
@@ -15,41 +19,62 @@ router.post('/login', async (req, res) => {
     try {
         const db = req.catalyst.datastore();
         
-        // Find officer record in Data Store by email address (login identifier)
+        // Find officer record in KSP Employee table joined with Rank by email
         const queryResult = await db.executeQueries(
-            `SELECT ROWID, name, role, station_id, status FROM officers WHERE email = '${email}' LIMIT 1`
+            `SELECT Employee.ROWID, Employee.FirstName, Employee.password_hash, Employee.status, Employee.UnitID, Rank.RankName FROM Employee LEFT JOIN Rank ON Employee.RankID = Rank.RankID WHERE Employee.email = '${email}' LIMIT 1`
         );
 
         if (queryResult && queryResult.length > 0) {
-            const officer = queryResult[0].officers;
+            // In join queries, Catalyst SDK returns columns nested under table names
+            const employeeData = queryResult[0].Employee || queryResult[0];
+            const rankData = queryResult[0].Rank || {};
             
-            if (officer.status !== 'ACTIVE') {
+            if (employeeData.status !== 'ACTIVE') {
                 return res.status(403).json({ error: "Officer profile suspended" });
             }
 
+            // Verify password using bcryptjs
+            const isMatch = bcrypt.compareSync(password, employeeData.password_hash);
+            if (!isMatch) {
+                return res.status(401).json({ error: "Invalid credentials" });
+            }
+
+            const role = (rankData.RankName || 'INSPECTOR').toUpperCase();
+
+            // Sign a real JWT token
+            const token = jwt.sign({
+                id: employeeData.ROWID,
+                name: employeeData.FirstName,
+                role: role,
+                station_id: employeeData.UnitID || 'BLR_STN_04'
+            }, JWT_SECRET, { expiresIn: '24h' });
+
             return res.status(200).json({
                 message: "Authentication successful",
-                token: "mock-jwt-token-xyz",
+                token: token,
                 officer: {
-                    id: officer.ROWID,
-                    name: officer.name,
-                    role: officer.role,
-                    station_id: officer.station_id
+                    id: employeeData.ROWID,
+                    name: employeeData.FirstName,
+                    role: role,
+                    station_id: employeeData.UnitID || 'BLR_STN_04'
                 }
             });
         }
 
         // Mock Fallback for Datathon local prototyping if DB is empty
         if (email === "inspector.rajesh@karnataka.gov.in" && password === "VajraPass123") {
+            const mockUser = {
+                id: "999",
+                name: "Rajesh Kumar",
+                role: "INSPECTOR",
+                station_id: "BLR_STN_04"
+            };
+            const token = jwt.sign(mockUser, JWT_SECRET, { expiresIn: '24h' });
+
             return res.status(200).json({
                 message: "Authentication successful (Mock Fallback)",
-                token: "mock-jwt-token-xyz",
-                officer: {
-                    id: "999",
-                    name: "Rajesh Kumar",
-                    role: "INSPECTOR",
-                    station_id: "BLR_STN_04"
-                }
+                token: token,
+                officer: mockUser
             });
         }
 
