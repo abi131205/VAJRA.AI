@@ -1,4 +1,4 @@
-# VAJRA.AI — State Investigation Operating System (v4.0)
+# VAJRA.AI — State Investigation Operating System 
 *Government-Grade Case Ingress, Chronological Timeline Assembly, and Cryptographic Tamper-Proof Auditing on Zoho Catalyst*
 
 VAJRA.AI is a premium, high-fidelity AI-powered Investigation Operating System custom-engineered for the **State Crime Record Bureau (SCRB) Karnataka**. Built entirely on a serverless microservices architecture utilizing the **Zoho Catalyst** cloud ecosystem, the platform streamlines document ingress, Zia OCR textual extraction, BNS legal reference mapping, and cryptographic audit logs to create a highly visual, secure "Situation Room" for police investigators.
@@ -126,7 +126,7 @@ Team status: **100% Completed and Verified for Datathon Presentation**.
 ```mermaid
 graph TD
     Repo[Git Repo: main] -->|Abijith| AI[AI, OCR, Prompts & Forensic Data]
-    Repo -->|Abijith| Viz[D3 Graph Compiler & Entity Resolution - Siddhika's Work]
+    Repo -->|Abijith| Viz[D3 Graph Compiler & Entity Resolution -]
     Repo -->|Vishaal| Fullstack[React, Zustand, Gateway & JWT Auth]
     Repo -->|Tej Aditya| ML[Cosine Similarity & Admissibility Weights]
 ```
@@ -135,7 +135,7 @@ graph TD
 
 #### 👤 Abijith (Lead & AI Architect) — *Completed 100%*
 *   **Focus**: Zia OCR Integration, LLM Connections, System Prompt layouts, and Forensic matching.
-*   **Visualizer Handover (Siddhika's Work)**: Took over and successfully built the interactive D3 Suspect Entity Resolution CDR Network graph component and linked dashboard nodes due to Siddhika's health issues.
+*   **Visualizer Handover**: Took over and successfully built the interactive D3 Suspect Entity Resolution CDR Network graph component and linked dashboard nodes
 *   **Source Files**: `evidenceController.js`, `timelineAgent.js`, `legalAgent.js`, `networkService.js`, `NetworkGraphViewer.jsx`, `Dashboard.jsx`.
 
 #### 👤 Vishaal (Fullstack Dev + Deployment Config) — *Completed 100%*
@@ -145,6 +145,3 @@ graph TD
 #### 👤 Tej Aditya (ML Specialist) — *Completed 100%*
 *   **Focus**: Cosine distance case comparison algorithms and trust reliability scoring.
 *   **Source Files**: `caseController.js`, `similarityService.js`.
-
-#### 👤 Siddhika (Python / Viz Specialist)
-*   *Note*: Transferred D3 CDR Entity Graph and visualizer UI tasks to **Abijith** due to health conditions. All deliverables completed on schedule.
