@@ -546,7 +546,9 @@ export const useStore = create((set, get) => ({
     if (mockMode) {
       set({
         similarCases: [
-          { case_number: 'FIR_15_2026', title: 'Whitefield Vehicle Smuggling Ring', similarity_score: 0.92, overlapping_keys: ['robbery', 'midnight', 'truck'], summary: 'Intercepted container cargo carrying high-value parts...' }
+          { case_number: 'FIR_21_2026', title: 'Peenya Industrial Warehouse Burglary', similarity_score: 0.87, trust_score: 0.78, reliability_label: 'HIGH', overlapping_keys: ['armed', 'burglary', 'midnight', 'storage'], summary: 'Armed burglary during midnight hours at industrial storage locker facility...' },
+          { case_number: 'FIR_23_2026', title: 'Hoskote Storage Yard Break-in', similarity_score: 0.53, trust_score: 0.5, reliability_label: 'MEDIUM', overlapping_keys: ['burglary', 'midnight', 'storage', 'locker'], summary: 'Midnight burglary at a storage facility involving forced locker entry...' },
+          { case_number: 'FIR_15_2026', title: 'Whitefield Vehicle Smuggling Ring', similarity_score: 0.08, trust_score: 0.15, reliability_label: 'LOW', overlapping_keys: ['container'], summary: 'Intercepted container cargo carrying high-value parts...' }
         ]
       });
       return;

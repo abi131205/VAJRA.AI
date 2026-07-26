@@ -61,6 +61,34 @@ router.get('/', async (req, res) => {
                 description: 'Multi-location ATM tampering with Bluetooth-enabled skimming devices. 3 arrests made.',
                 status: 'CHARGE_SHEETED', assigned_officer: '998',
                 created_time: '2026-06-28T06:00:00.000Z'
+            },
+            {
+                ROWID: '4', case_number: 'FIR_21_2026',
+                title: 'Peenya Industrial Warehouse Burglary',
+                description: 'Armed burglary during midnight hours at industrial storage locker facility. CCTV identified black container truck leaving the compound.',
+                status: 'OPEN', assigned_officer: '997',
+                created_time: '2026-07-10T23:15:00.000Z'
+            },
+            {
+                ROWID: '5', case_number: 'FIR_23_2026',
+                title: 'Hoskote Storage Yard Break-in',
+                description: 'Midnight burglary at a storage facility involving forced locker entry. Witnesses reported a black truck parked near the container yard.',
+                status: 'UNDER_INVESTIGATION', assigned_officer: '996',
+                created_time: '2026-07-14T01:40:00.000Z'
+            },
+            {
+                ROWID: '6', case_number: 'FIR_19_2026',
+                title: 'Marathahalli Cyber Fraud Case',
+                description: 'Phishing emails used to extract banking credentials from corporate employees over several weeks.',
+                status: 'OPEN', assigned_officer: '',
+                created_time: '2026-07-02T09:00:00.000Z'
+            },
+            {
+                ROWID: '7', case_number: 'FIR_25_2026',
+                title: 'Yelahanka Chain Snatching',
+                description: 'Two-wheeler borne miscreants snatched a gold chain from a pedestrian near a bus stop in broad daylight.',
+                status: 'CHARGE_SHEETED', assigned_officer: '995',
+                created_time: '2026-06-20T17:30:00.000Z'
             }
         ]);
     } catch (err) {
@@ -287,10 +315,30 @@ router.get('/:case_number/similar', async (req, res) => {
         if (!matches || matches.length === 0) {
             return res.status(200).json([
                 {
+                    case_number: 'FIR_21_2026',
+                    title: 'Peenya Industrial Warehouse Burglary',
+                    similarity_score: 0.87,
+                    trust_score: 0.78,
+                    reliability_label: 'HIGH',
+                    overlapping_keys: ['armed', 'burglary', 'midnight', 'storage', 'locker', 'black', 'container', 'truck'],
+                    summary: 'Armed burglary during midnight hours at industrial storage locker facility...'
+                },
+                {
+                    case_number: 'FIR_23_2026',
+                    title: 'Hoskote Storage Yard Break-in',
+                    similarity_score: 0.53,
+                    trust_score: 0.5,
+                    reliability_label: 'MEDIUM',
+                    overlapping_keys: ['burglary', 'midnight', 'storage', 'locker', 'black', 'container', 'truck'],
+                    summary: 'Midnight burglary at a storage facility involving forced locker entry...'
+                },
+                {
                     case_number: 'FIR_15_2026',
                     title: 'Whitefield Vehicle Smuggling Ring',
-                    similarity_score: 0.92,
-                    overlapping_keys: ['robbery', 'midnight', 'truck'],
+                    similarity_score: 0.08,
+                    trust_score: 0.15,
+                    reliability_label: 'LOW',
+                    overlapping_keys: ['container'],
                     summary: 'Intercepted container cargo carrying high-value parts...'
                 }
             ]);
