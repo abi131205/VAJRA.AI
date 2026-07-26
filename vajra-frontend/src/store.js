@@ -20,22 +20,49 @@ const MOCK_CASES = [
     title: 'Electronic City Commercial Robbery',
     description: 'Armed burglary during midnight hours at central storage locker facility. CCTV identified black container truck.',
     status: 'UNDER_INVESTIGATION', assigned_officer: '999',
-    created_time: '2026-07-04T10:00:00.000Z'
+    created_time: '2026-07-04T10:00:00.000Z',
+    latitude: 12.8399, longitude: 77.6770
   },
   {
     ROWID: '2', case_number: 'FIR_15_2026',
-    title: 'Whitefield Vehicle Smuggling Ring',
-    description: 'Intercepted container cargo carrying high-value heavy machinery parts with forged manifests.',
+    title: 'Mysuru Palace Heritage Theft',
+    description: 'Palace vault burglary involving historical artifacts and gold ornaments. Intercepted cargo carrying forged manifests.',
     status: 'OPEN', assigned_officer: '',
-    created_time: '2026-07-05T08:00:00.000Z'
+    created_time: '2026-07-05T08:00:00.000Z',
+    latitude: 12.2743, longitude: 76.6785
   },
   {
     ROWID: '3', case_number: 'FIR_08_2026',
     title: 'Koramangala ATM Skimming Network',
     description: 'Multi-location ATM tampering. Suspects using Bluetooth-enabled skimming devices. 3 arrests made.',
     status: 'CHARGE_SHEETED', assigned_officer: '998',
-    created_time: '2026-06-28T06:00:00.000Z'
+    created_time: '2026-06-28T06:00:00.000Z',
+    latitude: 12.9352, longitude: 77.6245
   },
+  {
+    ROWID: '4', case_number: 'FIR_20_2026',
+    title: 'Mangaluru Port Gold Smuggling',
+    description: 'Maritime entry and transit of gold bars hidden inside containerized cargo. Customs checks bypassed.',
+    status: 'UNDER_INVESTIGATION', assigned_officer: '999',
+    created_time: '2026-07-10T14:30:00.000Z',
+    latitude: 12.8706, longitude: 74.8822
+  },
+  {
+    ROWID: '5', case_number: 'FIR_32_2026',
+    title: 'Hubballi Junction Train Cargo Heist',
+    description: 'Organized train compartment burglary at the central freight yard container hub.',
+    status: 'OPEN', assigned_officer: '',
+    created_time: '2026-07-18T23:15:00.000Z',
+    latitude: 15.3647, longitude: 75.1240
+  },
+  {
+    ROWID: '6', case_number: 'FIR_45_2026',
+    title: 'Belagavi Border Checkpost Narcotics',
+    description: 'Contraband seizure and suspect interception at border checkpoint during routine vehicle checks.',
+    status: 'UNDER_INVESTIGATION', assigned_officer: '999',
+    created_time: '2026-07-22T03:45:00.000Z',
+    latitude: 15.8497, longitude: 74.4977
+  }
 ];
 
 const MOCK_TIMELINE = [
@@ -73,13 +100,13 @@ const MOCK_AUDIT = [
 ];
 
 const MOCK_HOTSPOTS = [
-  { lat: 12.9716, lng: 77.5946, intensity: 0.9, type: 'Robbery', count: 14 },
-  { lat: 12.9352, lng: 77.6245, intensity: 0.75, type: 'Vehicle Theft', count: 9 },
-  { lat: 12.9766, lng: 77.7232, intensity: 0.6, type: 'ATM Skimming', count: 7 },
-  { lat: 12.9141, lng: 77.6387, intensity: 0.85, type: 'Robbery', count: 11 },
-  { lat: 12.9902, lng: 77.5494, intensity: 0.4, type: 'Assault', count: 4 },
-  { lat: 12.9550, lng: 77.6700, intensity: 0.7, type: 'Burglary', count: 8 },
-  { lat: 12.9300, lng: 77.5800, intensity: 0.55, type: 'Theft', count: 6 },
+  { lat: 12.9716, lng: 77.5946, intensity: 0.90, type: 'Robbery',       count: 14, area: 'Bengaluru (MG Road)' },
+  { lat: 12.8399, lng: 77.6770, intensity: 0.85, type: 'Burglary',      count: 11, area: 'Electronic City' },
+  { lat: 12.2958, lng: 76.6394, intensity: 0.80, type: 'Theft',         count: 12, area: 'Mysuru (Palace)' },
+  { lat: 12.9141, lng: 74.8560, intensity: 0.75, type: 'Smuggling',     count: 9,  area: 'Mangaluru (Port)' },
+  { lat: 15.3647, lng: 75.1240, intensity: 0.70, type: 'Cargo Theft',   count: 8,  area: 'Hubballi Junction' },
+  { lat: 15.8497, lng: 74.4977, intensity: 0.65, type: 'Narcotics',     count: 6,  area: 'Belagavi Checkpost' },
+  { lat: 13.1378, lng: 78.1356, intensity: 0.50, type: 'Mining Dispute', count: 5,  area: 'Kolar Gold Fields' }
 ];
 
 const MOCK_CHAT = [
@@ -91,6 +118,53 @@ const MOCK_CHAT = [
     agentTrace: ['System'],
   }
 ];
+
+const formatChatAnswer = (answer) => {
+  if (!answer) return 'No response data.';
+  if (typeof answer === 'string') return answer;
+
+  const dataObj = answer.answer || answer;
+  const intent = dataObj.intent || 'rag_query';
+  const data = dataObj.data || [];
+  const citations = dataObj.citations || [];
+
+  if (intent === 'rag_query' || intent === 'legal') {
+    if (!Array.isArray(data) || data.length === 0) {
+      return dataObj.reply || 'No legal provisions matched the query.';
+    }
+    let md = `Based on your legal query, I have mapped the relevant **Bharatiya Nyaya Sanhita (BNS)** provisions:\n\n`;
+    for (const item of data) {
+      md += `### ⚖️ **${item.bns_section || item.section || 'BNS Provision'}: ${item.title || 'Unknown Title'}**\n`;
+      md += `- **Rationale**: ${item.rationale || 'Matched via semantic precedent.'}\n`;
+      if (item.admissibility_warning) {
+        md += `- ⚠️ **Admissibility Warning**: ${item.admissibility_warning}\n`;
+      }
+      md += `- **Confidence**: ${Math.round((item.confidence || 0.7) * 100)}%\n\n`;
+    }
+    if (citations.length > 0) {
+      md += `*Sources Cited: ${citations.map(c => `${c.source || c.label || 'BNS Legal Index'} (${c.version || '2024'})`).join(', ')}*`;
+    }
+    return md;
+  }
+
+  if (intent === 'timeline' || intent === 'events') {
+    if (!Array.isArray(data) || data.length === 0) {
+      return dataObj.reply || 'No chronological timeline events extracted.';
+    }
+    let md = `Here is the reconstructed chronological timeline from the case evidence:\n\n`;
+    for (const item of data) {
+      const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleString('en-IN') : 'Unknown Time';
+      md += `🕒 **${timeStr}** — **${item.title || 'Event'}**\n`;
+      md += `*   ${item.description || ''}\n`;
+      md += `*   *Source: ${item.evidence_source || 'Evidence Upload'} | Confidence: ${Math.round((item.confidence || 0.8) * 100)}%*\n\n`;
+    }
+    return md;
+  }
+
+  if (dataObj.reply) return dataObj.reply;
+
+  return JSON.stringify(dataObj, null, 2);
+};
 
 // ─── Store ────────────────────────────────────────────────────
 export const useStore = create((set, get) => ({
@@ -357,11 +431,13 @@ export const useStore = create((set, get) => ({
               // final structured result event
               const answer = data.answer;
               const sources = [];
-              if (answer?.citations) {
-                for (const c of answer.citations) sources.push({ label: c.source, type: c.type || 'SYSTEM' });
+              const citations = answer?.citations || answer?.answer?.citations || [];
+              for (const c of citations) {
+                sources.push({ label: c.source || c.label || 'BNS Reference', type: 'LEGAL' });
               }
+              const formattedContent = formatChatAnswer(answer);
               updateLastMessage({
-                content: content || JSON.stringify(answer?.primary_data || answer, null, 2),
+                content: formattedContent,
                 sources,
                 agentTrace: ['Orchestrator', data.intent || 'rag_query']
               });
