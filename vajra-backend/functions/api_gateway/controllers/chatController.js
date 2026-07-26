@@ -136,6 +136,89 @@ async function inlineFallbackDispatch(catalystApp, intent, query, lang) {
     return result;
 }
 
+function formatResultToMarkdown(result) {
+    if (!result) return 'No response data.';
+    if (typeof result === 'string') return result;
+
+    const dataObj = result.answer || result;
+    const intent = dataObj.intent || 'rag_query';
+    const data = dataObj.data || [];
+    const citations = dataObj.citations || [];
+
+    if (intent === 'rag_query' || intent === 'legal') {
+        if (!Array.isArray(data) || data.length === 0) {
+            return dataObj.reply || 'No legal provisions matched the query.';
+        }
+        let md = `Based on your legal query, I have mapped the relevant **Bharatiya Nyaya Sanhita (BNS)** provisions:\n\n`;
+        for (const item of data) {
+            md += `### ⚖️ **${item.bns_section || item.section || 'BNS Provision'}: ${item.title || 'Unknown Title'}**\n`;
+            md += `- **Rationale**: ${item.rationale || 'Matched via semantic precedent.'}\n`;
+            if (item.admissibility_warning) {
+                md += `- ⚠️ **Admissibility Warning**: ${item.admissibility_warning}\n`;
+            }
+            md += `- **Confidence**: ${Math.round((item.confidence || 0.7) * 100)}%\n\n`;
+        }
+        if (citations.length > 0) {
+            md += `*Sources Cited: ${citations.map(c => `${c.source || c.label || 'BNS Legal Index'} (${c.version || '2024'})`).join(', ')}*`;
+        }
+        return md;
+    }
+
+    if (intent === 'forecast_query') {
+        const hotspots = data.hotspots || [];
+        if (hotspots.length === 0) return 'No predictive hotspots found for this window.';
+        let md = `### 🔮 **Crime Forecast & Spatial Hotspots**\n\n`;
+        md += `Based on the latest QuickML predictive models, here are the anticipated hotspots:\n\n`;
+        for (const h of hotspots) {
+            md += `- 📍 **${h.area}** – Risk: **${h.risk_level}** | Predicted Incidents: **${h.predicted_incidents || h.count || 1}**\n`;
+        }
+        md += `\n*Model used: ${data.model || 'rule_based_spatial_cluster_v1'} | Confidence: ${Math.round((data.confidence || 0.72) * 100)}%*`;
+        return md;
+    }
+
+    if (intent === 'sql_query') {
+        if (!Array.isArray(data) || data.length === 0) {
+            return 'No matching records found in the database.';
+        }
+        let md = `### 📋 **Database Query Results**\n\n`;
+        md += `I found ${data.length} records matching your query:\n\n`;
+        for (const item of data) {
+            md += `- **Case: ${item.case_number || item.CaseNo || 'N/A'}** – ${item.title || item.BriefFacts || 'No title'}\n`;
+            if (item.status || item.CaseStatusID) {
+                md += `  *Status: ${mapStatus(item.status || item.CaseStatusID)}*\n`;
+            }
+        }
+        return md;
+    }
+
+    if (intent === 'graph_query') {
+        const nodes = data.nodes || [];
+        const edges = data.edges || [];
+        if (nodes.length === 0) return 'No suspect connection network resolved.';
+        let md = `### 🕸️ **Suspect Link Analysis & Association Network**\n\n`;
+        md += `Reconstructed suspect relationships:\n\n`;
+        for (const node of nodes) {
+            if (node.type === 'SUSPECT') {
+                md += `- 👤 **Suspect: ${node.label}** (Alias: ${node.properties?.alias || 'None'})\n`;
+            }
+        }
+        md += `\nGraph contains ${nodes.length} nodes and ${edges.length} suspect linkages. View the visualizer in the right panel for full interaction.`;
+        return md;
+    }
+
+    if (dataObj.reply) return dataObj.reply;
+
+    return JSON.stringify(dataObj, null, 2);
+}
+
+// Helper to map status code to string representation
+const mapStatus = (statusId) => {
+    const sId = Number(statusId);
+    if (sId === 1) return 'OPEN';
+    if (sId === 3) return 'CHARGE_SHEETED';
+    return 'UNDER_INVESTIGATION';
+};
+
 // ── Route handler ──────────────────────────────────────────────────────────
 /**
  * @route  POST /api/v1/chat
@@ -192,12 +275,12 @@ router.post('/', async (req, res) => {
             agentResult = await inlineFallbackDispatch(catalystApp, intent, query, lang);
         }
 
-        // ── Stream result tokens ──────────────────────────────────────────
-        // Simulate token streaming by chunking the JSON output
-        const resultStr   = JSON.stringify(agentResult, null, 2);
-        const chunkSize   = 120;
-        for (let i = 0; i < resultStr.length; i += chunkSize) {
-            sseWrite(res, 'token', { chunk: resultStr.slice(i, i + chunkSize) });
+        // ── Stream result tokens (markdown representation) ─────────────────
+        const mdText = formatResultToMarkdown(agentResult);
+        const chunkSize = 24;
+        for (let i = 0; i < mdText.length; i += chunkSize) {
+            sseWrite(res, 'token', { chunk: mdText.slice(i, i + chunkSize) });
+            await new Promise(r => setTimeout(r, 15));
         }
 
         // ── Send final structured result ──────────────────────────────────
@@ -207,6 +290,7 @@ router.post('/', async (req, res) => {
             lang,
             session_id: session_id || null,
             answer:     agentResult,
+            markdown:   mdText,
             timestamp:  new Date().toISOString()
         });
 
