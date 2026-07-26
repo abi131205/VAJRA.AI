@@ -27,6 +27,125 @@ const mapStatus = (statusId) => {
     return 'UNDER_INVESTIGATION';
 };
 
+const mapLocation = (text = '') => {
+    const lower = text.toLowerCase();
+    if (lower.includes('mysuru') || lower.includes('mysore')) {
+        return { lat: 12.2743, lng: 76.6785 };
+    }
+    if (lower.includes('mangaluru') || lower.includes('mangalore')) {
+        return { lat: 12.8706, lng: 74.8822 };
+    }
+    if (lower.includes('hubballi') || lower.includes('hubli')) {
+        return { lat: 15.3647, lng: 75.1240 };
+    }
+    if (lower.includes('belagavi') || lower.includes('belgaum')) {
+        return { lat: 15.8497, lng: 74.4977 };
+    }
+    if (lower.includes('kolar') || lower.includes('kgf')) {
+        return { lat: 12.9592, lng: 78.2706 };
+    }
+    // Default to a random central Bengaluru coordinate to prevent duplicates stack
+    const offsetLat = (Math.random() - 0.5) * 0.05;
+    const offsetLng = (Math.random() - 0.5) * 0.05;
+    return { lat: 12.9716 + offsetLat, lng: 77.5946 + offsetLng };
+};
+
+async function seedDatabase(db) {
+    const seedCases = [
+        {
+            CaseMasterID: 10001,
+            CaseNo: 'FIR_12_2026',
+            CrimeNo: '104430006202600012',
+            BriefFacts: 'Electronic City Commercial Robbery. Armed burglary during midnight hours at central storage locker facility. CCTV identified black container truck.',
+            CrimeRegisteredDate: '2026-07-04 10:00:00',
+            CaseStatusID: 2,
+            latitude: 12.8399,
+            longitude: 77.6770
+        },
+        {
+            CaseMasterID: 10002,
+            CaseNo: 'FIR_15_2026',
+            CrimeNo: '104430006202600015',
+            BriefFacts: 'Mysuru Palace Heritage Theft. Intercepted container cargo carrying high-value heavy machinery parts with forged manifests.',
+            CrimeRegisteredDate: '2026-07-05 08:00:00',
+            CaseStatusID: 1,
+            latitude: 12.2743,
+            longitude: 76.6785
+        },
+        {
+            CaseMasterID: 10003,
+            CaseNo: 'FIR_08_2026',
+            CrimeNo: '104430006202600008',
+            BriefFacts: 'Koramangala ATM Skimming Network. Multi-location ATM tampering. Suspects using Bluetooth-enabled skimming devices. 3 arrests made.',
+            CrimeRegisteredDate: '2026-06-28 06:00:00',
+            CaseStatusID: 3,
+            latitude: 12.9352,
+            longitude: 77.6245
+        },
+        {
+            CaseMasterID: 10004,
+            CaseNo: 'FIR_20_2026',
+            CrimeNo: '104430006202600020',
+            BriefFacts: 'Mangaluru Port Gold Smuggling. Illegal maritime entry and transit of gold bars hidden inside refrigeration compressors.',
+            CrimeRegisteredDate: '2026-07-10 14:30:00',
+            CaseStatusID: 2,
+            latitude: 12.8706,
+            longitude: 74.8822
+        },
+        {
+            CaseMasterID: 10005,
+            CaseNo: 'FIR_32_2026',
+            CrimeNo: '104430006202600032',
+            BriefFacts: 'Hubballi Junction Train Cargo Heist. Organized theft of dry goods and electronics from the freight terminal container yard.',
+            CrimeRegisteredDate: '2026-07-18 23:15:00',
+            CaseStatusID: 1,
+            latitude: 15.3647,
+            longitude: 75.1240
+        },
+        {
+            CaseMasterID: 10006,
+            CaseNo: 'FIR_45_2026',
+            CrimeNo: '104430006202600045',
+            BriefFacts: 'Belagavi Border Checkpost Narcotics Transit. Seizure of contraband items during routine night checks. Dynamic vehicle interception.',
+            CrimeRegisteredDate: '2026-07-22 03:45:00',
+            CaseStatusID: 2,
+            latitude: 15.8497,
+            longitude: 74.4977
+        }
+    ];
+
+    console.log('[Seeder] Seeding database with high-fidelity Karnataka cases...');
+    
+    try {
+        for (const c of seedCases) {
+            await db.table('CaseMaster').insertRow(c);
+        }
+        console.log('[Seeder] Successfully seeded CaseMaster table');
+        return true;
+    } catch (kspErr) {
+        console.warn('[Seeder] CaseMaster seed failed, trying cases table:', kspErr.message);
+        try {
+            for (const c of seedCases) {
+                await db.table('cases').insertRow({
+                    case_number: c.CaseNo,
+                    title: c.CaseNo + ' - ' + c.BriefFacts.split('.')[0],
+                    description: c.BriefFacts,
+                    status: c.CaseStatusID === 1 ? 'OPEN' : c.CaseStatusID === 3 ? 'CHARGE_SHEETED' : 'UNDER_INVESTIGATION',
+                    assigned_officer: '999',
+                    created_time: new Date(c.CrimeRegisteredDate).toISOString(),
+                    latitude: c.latitude,
+                    longitude: c.longitude
+                });
+            }
+            console.log('[Seeder] Successfully seeded cases table');
+            return true;
+        } catch (casesErr) {
+            console.error('[Seeder] Both seed attempts failed:', casesErr.message);
+            return false;
+        }
+    }
+}
+
 // ── GET /api/v1/cases ─────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
     const { status, assigned_officer } = req.query;
@@ -34,8 +153,16 @@ router.get('/', async (req, res) => {
 
     // 1. Try querying KSP CaseMaster schema first
     try {
-        let query = 'SELECT ROWID, CaseNo, CrimeNo, BriefFacts, CrimeRegisteredDate, CaseStatusID FROM CaseMaster';
-        const queryResult = await db.executeQueries(query);
+        let query = 'SELECT ROWID, CaseMasterID, CaseNo, CrimeNo, BriefFacts, CrimeRegisteredDate, CaseStatusID, latitude, longitude FROM CaseMaster';
+        let queryResult = await db.executeQueries(query);
+
+        // If table exists but holds 0 rows, seed database!
+        if (queryResult && queryResult.length === 0) {
+            const seeded = await seedDatabase(db);
+            if (seeded) {
+                queryResult = await db.executeQueries(query);
+            }
+        }
 
         if (queryResult && queryResult.length > 0) {
             const mappedCases = queryResult.map(c => {
@@ -46,8 +173,10 @@ router.get('/', async (req, res) => {
                     title:            `${data.CaseNo || 'Crime'} (${data.CrimeNo || 'N/A'})`,
                     description:      data.BriefFacts || 'No case brief available.',
                     status:           mapStatus(data.CaseStatusID),
-                    assigned_officer: '999', // Default assigned officer Raj
-                    created_time:     data.CrimeRegisteredDate || new Date().toISOString()
+                    assigned_officer: '999',
+                    created_time:     data.CrimeRegisteredDate || new Date().toISOString(),
+                    latitude:         Number(data.latitude || 12.9716),
+                    longitude:        Number(data.longitude || 77.5946)
                 };
             });
             return res.status(200).json(mappedCases);
@@ -58,43 +187,60 @@ router.get('/', async (req, res) => {
 
     // 2. Try querying custom cases schema
     try {
-        let query = 'SELECT ROWID, case_number, title, description, status, assigned_officer, created_time FROM cases';
+        let query = 'SELECT ROWID, case_number, title, description, status, assigned_officer, created_time, latitude, longitude FROM cases';
         const conditions = [];
         if (status)           conditions.push(`status = '${status}'`);
         if (assigned_officer) conditions.push(`assigned_officer = '${assigned_officer}'`);
         if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
 
-        const casesData = await db.executeQueries(query);
+        let casesData = await db.executeQueries(query);
+
+        if (casesData && casesData.length === 0) {
+            const seeded = await seedDatabase(db);
+            if (seeded) {
+                casesData = await db.executeQueries(query);
+            }
+        }
 
         if (casesData && casesData.length > 0) {
-            return res.status(200).json(casesData.map(c => c.cases || c));
+            return res.status(200).json(casesData.map(c => {
+                const data = c.cases || c;
+                return {
+                    ...data,
+                    latitude:  Number(data.latitude || 12.9716),
+                    longitude: Number(data.longitude || 77.5946)
+                };
+            }));
         }
     } catch (casesErr) {
         console.warn('[CaseController] Custom cases table query also failed:', casesErr.message);
     }
 
-    // 3. Resilient fallback: return static mock cases if no tables are populated
+    // 3. Resilient fallback: return static mock cases if no tables are populated/accessible
     return res.status(200).json([
         {
             ROWID: '1', case_number: 'FIR_12_2026',
             title: 'Electronic City Commercial Robbery',
             description: 'Armed burglary during midnight hours at central storage locker facility. CCTV identified black container truck.',
             status: 'UNDER_INVESTIGATION', assigned_officer: '999',
-            created_time: '2026-07-04T10:00:00.000Z'
+            created_time: '2026-07-04T10:00:00.000Z',
+            latitude: 12.8399, longitude: 77.6770
         },
         {
             ROWID: '2', case_number: 'FIR_15_2026',
-            title: 'Whitefield Vehicle Smuggling Ring',
+            title: 'Mysuru Palace Heritage Theft',
             description: 'Intercepted container cargo carrying high-value heavy machinery parts with forged manifests.',
             status: 'OPEN', assigned_officer: '',
-            created_time: '2026-07-05T08:00:00.000Z'
+            created_time: '2026-07-05T08:00:00.000Z',
+            latitude: 12.2743, longitude: 76.6785
         },
         {
             ROWID: '3', case_number: 'FIR_08_2026',
             title: 'Koramangala ATM Skimming Network',
             description: 'Multi-location ATM tampering with Bluetooth-enabled skimming devices. 3 arrests made.',
             status: 'CHARGE_SHEETED', assigned_officer: '998',
-            created_time: '2026-06-28T06:00:00.000Z'
+            created_time: '2026-06-28T06:00:00.000Z',
+            latitude: 12.9352, longitude: 77.6245
         }
     ]);
 });
@@ -113,6 +259,9 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: 'Missing case_number or title' });
     }
 
+    // Auto-georeference the case location based on place name inside the title/description
+    const loc = mapLocation(title + ' ' + (description || ''));
+
     try {
         const db = req.catalyst.datastore();
         
@@ -124,10 +273,12 @@ router.post('/', async (req, res) => {
                 CrimeNo:             case_number,
                 BriefFacts:          description || title,
                 CrimeRegisteredDate: formatDateTime(new Date()),
-                CaseStatusID:        1 // 1 = OPEN
+                CaseStatusID:        1, // 1 = OPEN
+                latitude:            loc.lat,
+                longitude:           loc.lng
             };
             await db.table('CaseMaster').insertRow(kspRow);
-            console.log('[CaseController] Inserted into CaseMaster successfully');
+            console.log('[CaseController] Inserted into CaseMaster successfully with location coordinates');
         } catch (kspErr) {
             console.warn('[CaseController] CaseMaster insert failed, trying cases table:', kspErr.message);
             
@@ -138,7 +289,9 @@ router.post('/', async (req, res) => {
                 description:      description || '',
                 status:           'OPEN',
                 assigned_officer: assigned_officer || '',
-                created_time:     new Date().toISOString()
+                created_time:     new Date().toISOString(),
+                latitude:         loc.lat,
+                longitude:        loc.lng
             };
             await db.table('cases').insertRow(row);
         }
@@ -152,7 +305,7 @@ router.post('/', async (req, res) => {
             actor_id:    assigned_officer || 'SYSTEM',
             case_id:     case_number,
             action_type: 'CASE_STATE_CHANGE',
-            payload:     { action: 'CASE_CREATED', title, status: 'OPEN' }
+            payload:     { action: 'CASE_CREATED', title, status: 'OPEN', latitude: loc.lat, longitude: loc.lng }
         });
     } catch (auditErr) {
         console.warn('[CaseController] Audit commit failed (non-blocking):', auditErr.message);
@@ -165,7 +318,7 @@ router.post('/', async (req, res) => {
             from_email: 'inspector.rajesh@karnataka.gov.in', // Default verified domain placeholder
             to_email:   ['inspector.rajesh@karnataka.gov.in'],
             subject:    `⚠️ ALERT: High-Gravity Case Registered (${case_number})`,
-            content:    `Attention Officer,\n\nA new high-gravity case has been registered in the Situation Room.\n\nCase Number: ${case_number}\nTitle: ${title}\nRegistered: ${new Date().toLocaleString()}\n\nPlease login to the dashboard to compile briefings.\n\nCONFIDENTIAL - KARNATAKA SCRB.`
+            content:    `Attention Officer,\n\nA new high-gravity case has been registered in the Situation Room.\n\nCase Number: ${case_number}\nTitle: ${title}\nCoordinates: [${loc.lat}, ${loc.lng}]\nRegistered: ${new Date().toLocaleString()}\n\nPlease login to the dashboard to compile briefings.\n\nCONFIDENTIAL - KARNATAKA SCRB.`
         });
         console.log('[CaseController] Case creation mail alert sent successfully');
     } catch (mailErr) {

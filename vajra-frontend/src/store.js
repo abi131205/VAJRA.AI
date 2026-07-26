@@ -176,13 +176,20 @@ export const useStore = create((set, get) => ({
     if (get().mockMode) {
       await new Promise(r => setTimeout(r, 300));
       set({ cases: MOCK_CASES, loading: false });
+      if (MOCK_CASES.length > 0 && !get().activeCase) {
+        get().setActiveCase(MOCK_CASES[0]);
+      }
       return;
     }
     try {
       const { data } = await axios.get(`${API}/cases`, {
         headers: { 'X-Authorization': `Bearer ${get().token}` }
       });
-      set({ cases: data, loading: false });
+      const casesList = data || [];
+      set({ cases: casesList, loading: false });
+      if (casesList.length > 0 && !get().activeCase) {
+        get().setActiveCase(casesList[0]);
+      }
     } catch (err) {
       set({ error: err.message, loading: false });
     }
