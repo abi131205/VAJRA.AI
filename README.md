@@ -131,9 +131,17 @@ graph TD
     Repo --> ML[Cosine Similarity & Admissibility Weights]
 ```
 
-### Core Architecture Responsibilities
+### System Track Contributions
 
-*   **AI Orchestration**: Handles Zia OCR integrations, LLM pipelines, system prompt architecture, and forensic matching models.
-*   **Geospatial & Visualizations**: Interactive D3 Suspect Entity Resolution CDR Network graphs, Leaflet geospatial mappings, and dashboard layouts.
-*   **Authentication & State**: React client portals, Zustand state actions, API fetch wrappers, and JWT-bcrypt secure token authorizations.
-*   **Machine Learning**: Cosine distance case comparison algorithms, keyword overlap metrics, and trust-reliability scoring math.
+#### 👤 AI Architect
+*   **Focus**: Zia OCR document integrations, LLM prompt engineering, system orchestration protocols, and forensic information extraction models.
+*   **Visualizations**: Custom-designed D3.js Suspect Entity Resolution CDR Network graphs.
+*   **Engine Files**: `evidenceController.js`, `timelineAgent.js`, `legalAgent.js`, `networkService.js`, `NetworkGraphViewer.jsx`.
+
+#### 👤 Fullstack Developer & Cloud Architect
+*   **Focus**: React dashboard layouts, global Zustand stores, secure authentication gateway controls, database API routing, JWT-bcrypt tokens, and Zoho Catalyst configurations.
+*   **Engine Files**: `store.js`, `Login.jsx`, `Dashboard.jsx`, `authController.js`.
+
+#### 👤 Machine Learning Specialist
+*   **Focus**: Case similarity comparison engines, cosine distance algorithms, keyword overlap density calculations, and weighted trust/reliability score models.
+*   **Engine Files**: `caseController.js`, `similarityService.js`.
