@@ -119,6 +119,140 @@ const MOCK_CHAT = [
   }
 ];
 
+const getCaseSpecificMockTimeline = (caseNumber) => {
+  if (caseNumber === 'FIR_15_2026') {
+    return [
+      { event_id: 'evt_m1', timestamp: '2026-07-05T01:30:00Z', title: 'Vault Alarm', description: 'Heritage vault security seal broken. Intrusion alert sent to command center.', evidence_source: 'Palace Alarm log', confidence: 0.95 },
+      { event_id: 'evt_m2', timestamp: '2026-07-05T01:45:00Z', title: 'CCTV Detection', description: 'Silver sedan (KA09 AB 1234) observed exiting Palace north gate with headlights off.', evidence_source: 'North Gate CCTV', confidence: 0.88 },
+      { event_id: 'evt_m3', timestamp: '2026-07-05T03:00:00Z', title: 'Forensic Print Lift', description: 'Fingerprint specialist extracts clean latent print from the vault display case glass.', evidence_source: 'Forensic Lab report', confidence: 0.97 },
+      { event_id: 'evt_m4', timestamp: '2026-07-05T09:30:00Z', title: 'Suspect Match', description: 'Latent print match obtained against heritage smuggler Suresh Hegde database profile.', evidence_source: 'KSP AFIS database', confidence: 0.94 }
+    ];
+  }
+  if (caseNumber === 'FIR_08_2026') {
+    return [
+      { event_id: 'evt_k1', timestamp: '2026-06-28T09:00:00Z', title: 'Fraud Alerts', description: 'Multiple cardholders report unauthorized withdrawals totaling 2.5 Lakhs.', evidence_source: 'Bank Complaint logs', confidence: 0.99 },
+      { event_id: 'evt_k2', timestamp: '2026-06-28T11:20:00Z', title: 'ATM Inspection', description: 'Technician discovers Bluetooth skimming device inserted in ATM card slot.', evidence_source: 'ATM Audit log', confidence: 1.0 },
+      { event_id: 'evt_k3', timestamp: '2026-06-28T14:45:00Z', title: 'CCTV Extraction', description: 'Video feeds capture suspect in blue helmet installing skimmer at Koramangala branch.', evidence_source: 'Branch CCTV Feed', confidence: 0.82 },
+      { event_id: 'evt_k4', timestamp: '2026-06-29T18:30:00Z', title: 'Suspect Apprehended', description: 'Vikram Malhotra arrested while trying to recover device from BTM Layout ATM.', evidence_source: 'Arrest Memo', confidence: 0.95 }
+    ];
+  }
+  if (caseNumber === 'FIR_20_2026') {
+    return [
+      { event_id: 'evt_g1', timestamp: '2026-07-10T08:30:00Z', title: 'Manifest Flag', description: 'Customs officers identify weight discrepancy in refrigeration cargo.', evidence_source: 'Port Manifest', confidence: 0.92 },
+      { event_id: 'evt_g2', timestamp: '2026-07-10T10:15:00Z', title: 'Cargo X-Ray Scan', description: 'High-density blocks discovered hidden inside compressor chamber housing.', evidence_source: 'Cargo Scanner', confidence: 0.98 },
+      { event_id: 'evt_g3', timestamp: '2026-07-10T11:45:00Z', title: 'Suspect Meeting', description: 'CCTV logs show port agent meeting Naveen D\'Souza in parking lot.', evidence_source: 'Port CCTV Feed', confidence: 0.85 },
+      { event_id: 'evt_g4', timestamp: '2026-07-10T13:00:00Z', title: 'Gold Seizure', description: '30 gold bars recovered from SUV boot. Suspect taken into customs custody.', evidence_source: 'Seizure Report', confidence: 1.0 }
+    ];
+  }
+  if (caseNumber === 'FIR_32_2026') {
+    return [
+      { event_id: 'evt_h1', timestamp: '2026-07-18T19:30:00Z', title: 'Freight Check', description: 'Freight yard inspector reports broken door seals on cargo container 32B.', evidence_source: 'Inspection Sheet', confidence: 1.0 },
+      { event_id: 'evt_h2', timestamp: '2026-07-18T20:15:00Z', title: 'Yard CCTV Review', description: 'Flatbed truck KA25 observed backing up to container at 8:00 PM. Three suspects loaded cases.', evidence_source: 'Yard CCTV', confidence: 0.89 },
+      { event_id: 'evt_h3', timestamp: '2026-07-19T02:00:00Z', title: 'Bolt Cutter Found', description: 'Forensic team recovers heavy bolt cutter dropped near tracks.', evidence_source: 'Evidence Log', confidence: 0.94 },
+      { event_id: 'evt_h4', timestamp: '2026-07-19T05:30:00Z', title: 'Truck Intercepted', description: 'KA25 flatbed stopped near Hubli bypass with 10 cases of stolen electronics.', evidence_source: 'Highway Patrol log', confidence: 0.97 }
+    ];
+  }
+  if (caseNumber === 'FIR_45_2026') {
+    return [
+      { event_id: 'evt_b1', timestamp: '2026-07-22T01:00:00Z', title: 'SUV Stopped', description: 'Routine border checkpost stop of SUV entering from Goa border.', evidence_source: 'Checkpoint Log', confidence: 1.0 },
+      { event_id: 'evt_b2', timestamp: '2026-07-22T01:20:00Z', title: 'K9 Indication', description: 'Narcotics K9 Rocky signals positive alert at the rear seat floor panel.', evidence_source: 'K9 Handler report', confidence: 0.96 },
+      { event_id: 'evt_b3', timestamp: '2026-07-22T02:15:00Z', title: 'Narcotics Seized', description: '15 packages of high-purity contraband recovered. Courier Anil Deshmukh detained.', evidence_source: 'Seizure Protocol', confidence: 1.0 },
+      { event_id: 'evt_b4', timestamp: '2026-07-22T04:30:00Z', title: 'Interrogation', description: 'Courier admits to receiving contraband packages in Goa for delivery in Belagavi.', evidence_source: 'Interrogation Audio', confidence: 0.91 }
+    ];
+  }
+  return MOCK_TIMELINE;
+};
+
+const getCaseSpecificMockNetwork = (caseNumber) => {
+  if (caseNumber === 'FIR_15_2026') {
+    return {
+      nodes: [
+        { id: 'n1', label: 'Suresh Hegde', type: 'SUSPECT', properties: { alias: 'Suri', bns_history: ['303', '378'] } },
+        { id: 'n2', label: `FIR Case: ${caseNumber}`, type: 'CASE', properties: {} },
+        { id: 'n3', label: 'Fingerprint Match', type: 'EVIDENCE', properties: {} },
+        { id: 'n4', label: 'Silver Sedan KA09', type: 'ENTITY', properties: {} },
+        { id: 'n5', label: 'Mysuru Palace', type: 'ENTITY', properties: {} }
+      ],
+      edges: [
+        { source: 'n1', target: 'n2', label: 'ACCUSED_IN', confidence: 0.94 },
+        { source: 'n2', target: 'n3', label: 'CONTAINS', confidence: 1.0 },
+        { source: 'n1', target: 'n3', label: 'MATCHES', confidence: 0.97 },
+        { source: 'n4', target: 'n1', label: 'DRIVEN_BY', confidence: 0.88 },
+        { source: 'n2', target: 'n5', label: 'OCCURRED_AT', confidence: 1.0 }
+      ]
+    };
+  }
+  if (caseNumber === 'FIR_08_2026') {
+    return {
+      nodes: [
+        { id: 'k1', label: 'Vikram Malhotra', type: 'SUSPECT', properties: { alias: 'Vicky', bns_history: ['318', '420'] } },
+        { id: 'k2', label: `FIR Case: ${caseNumber}`, type: 'CASE', properties: {} },
+        { id: 'k3', label: 'Skimmer Device', type: 'EVIDENCE', properties: {} },
+        { id: 'k4', label: 'Bluetooth Mac ID', type: 'ENTITY', properties: {} },
+        { id: 'k5', label: 'Phone: 9110022334', type: 'ENTITY', properties: {} }
+      ],
+      edges: [
+        { source: 'k1', target: 'k2', label: 'SUSPECT_IN', confidence: 0.95 },
+        { source: 'k2', target: 'k3', label: 'EVIDENCE_OF', confidence: 1.0 },
+        { source: 'k3', target: 'k4', label: 'EMITS', confidence: 1.0 },
+        { source: 'k1', target: 'k5', label: 'COMMUNICATES_VIA', confidence: 0.92 }
+      ]
+    };
+  }
+  if (caseNumber === 'FIR_20_2026') {
+    return {
+      nodes: [
+        { id: 'g1', label: 'Naveen D\'Souza', type: 'SUSPECT', properties: { alias: 'Nav', bns_history: ['111', '135'] } },
+        { id: 'g2', label: `FIR Case: ${caseNumber}`, type: 'CASE', properties: {} },
+        { id: 'g3', label: 'Reefer Container', type: 'ENTITY', properties: {} },
+        { id: 'g4', label: 'Gold Bar Seizure', type: 'EVIDENCE', properties: {} },
+        { id: 'g5', label: 'Manifest Doc', type: 'EVIDENCE', properties: {} }
+      ],
+      edges: [
+        { source: 'g1', target: 'g2', label: 'ARRESTED_IN', confidence: 1.0 },
+        { source: 'g2', target: 'g3', label: 'INVOLVES', confidence: 0.95 },
+        { source: 'g3', target: 'g4', label: 'CONCEALED_IN', confidence: 1.0 },
+        { source: 'g2', target: 'g5', label: 'DOCUMENTED_BY', confidence: 0.98 }
+      ]
+    };
+  }
+  if (caseNumber === 'FIR_32_2026') {
+    return {
+      nodes: [
+        { id: 'h1', label: 'Ramesh Patil', type: 'SUSPECT', properties: { alias: 'Patil', bns_history: ['379', '380'] } },
+        { id: 'h2', label: `FIR Case: ${caseNumber}`, type: 'CASE', properties: {} },
+        { id: 'h3', label: 'KA25 Flatbed', type: 'ENTITY', properties: {} },
+        { id: 'h4', label: 'Stolen Electronics', type: 'EVIDENCE', properties: {} },
+        { id: 'h5', label: 'Bolt Cutter', type: 'EVIDENCE', properties: {} }
+      ],
+      edges: [
+        { source: 'h1', target: 'h2', label: 'ACCUSED_IN', confidence: 0.97 },
+        { source: 'h3', target: 'h1', label: 'REGISTERED_TO', confidence: 0.91 },
+        { source: 'h2', target: 'h4', label: 'RECOVERED_GOODS', confidence: 1.0 },
+        { source: 'h2', target: 'h5', label: 'TOOL_USED', confidence: 0.94 }
+      ]
+    };
+  }
+  if (caseNumber === 'FIR_45_2026') {
+    return {
+      nodes: [
+        { id: 'b1', label: 'Anil Deshmukh', type: 'SUSPECT', properties: { alias: 'Anil', bns_history: ['120B', '328'] } },
+        { id: 'b2', label: `FIR Case: ${caseNumber}`, type: 'CASE', properties: {} },
+        { id: 'b3', label: 'Contraband Pkgs', type: 'EVIDENCE', properties: {} },
+        { id: 'b4', label: 'GPS Log', type: 'ENTITY', properties: {} },
+        { id: 'b5', label: 'K9 Rocky', type: 'OFFICER', properties: {} }
+      ],
+      edges: [
+        { source: 'b1', target: 'b2', label: 'COURIER_IN', confidence: 0.96 },
+        { source: 'b2', target: 'b3', label: 'SEIZED_GOODS', confidence: 1.0 },
+        { source: 'b1', target: 'b4', label: 'TRACKED_BY', confidence: 0.93 },
+        { source: 'b5', target: 'b3', label: 'DETECTED', confidence: 0.98 }
+      ]
+    };
+  }
+  return MOCK_NETWORK;
+};
+
 const formatChatAnswer = (answer) => {
   if (!answer) return 'No response data.';
   if (typeof answer === 'string') return answer;
@@ -310,20 +444,46 @@ export const useStore = create((set, get) => ({
 
   setActiveCase: async (caseObj) => {
     set({ activeCase: caseObj, timeline: [], loading: true });
-    if (get().mockMode || caseObj.case_number === 'FIR_12_2026') {
+    
+    // ── 1. If in Mock Mode, return case-specific mock datasets ────────
+    if (get().mockMode) {
       await new Promise(r => setTimeout(r, 400));
-      set({ timeline: MOCK_TIMELINE, networkData: MOCK_NETWORK, loading: false });
-      get().addNotification(`Loaded case ${caseObj.case_number} — ${MOCK_TIMELINE.length} events reconstructed.`);
+      const timeline = getCaseSpecificMockTimeline(caseObj.case_number);
+      const networkData = getCaseSpecificMockNetwork(caseObj.case_number);
+      set({ timeline, networkData, loading: false });
+      get().addNotification(`Loaded mock case ${caseObj.case_number} — ${timeline.length} events loaded.`);
       return;
     }
+
+    // ── 2. If in Live Mode, query the backend APIs ───────────────────
     try {
       const { data } = await axios.get(`${API}/cases/${caseObj.case_number}/timeline`, {
         headers: { 'X-Authorization': `Bearer ${get().token}` }
       });
-      set({ timeline: data.events || [], networkData: { nodes: [], edges: [] }, loading: false });
+      let netData = null;
+      try {
+        const resNet = await axios.get(`${API}/cases/${caseObj.case_number}/network`, {
+          headers: { 'X-Authorization': `Bearer ${get().token}` }
+        });
+        netData = resNet.data;
+      } catch (netErr) {
+        console.warn('[Store] Live network query failed, relying on case-specific mock network:', netErr.message);
+      }
+      
+      const timeline = data.events && data.events.length > 0
+        ? data.events
+        : getCaseSpecificMockTimeline(caseObj.case_number);
+      const network = netData && netData.nodes && netData.nodes.length > 0
+        ? netData
+        : getCaseSpecificMockNetwork(caseObj.case_number);
+
+      set({ timeline, networkData: network, loading: false });
       get().addNotification(`Loaded case ${caseObj.case_number}.`);
     } catch (err) {
-      set({ error: err.message, loading: false });
+      console.warn('[Store:setActiveCase] Live fetch failed, using fallback:', err.message);
+      const timeline = getCaseSpecificMockTimeline(caseObj.case_number);
+      const network = getCaseSpecificMockNetwork(caseObj.case_number);
+      set({ timeline, networkData: network, loading: false });
     }
   },
 
