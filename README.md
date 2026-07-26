@@ -1,31 +1,44 @@
-# VAJRA.AI — State Investigation Operating System 
-*Government-Grade Case Ingress, Chronological Timeline Assembly, and Cryptographic Tamper-Proof Auditing on Zoho Catalyst*
+# 🛡️ VAJRA.AI — State Investigation Operating System 
 
-VAJRA.AI is a premium, high-fidelity AI-powered Investigation Operating System custom-engineered for the **State Crime Record Bureau (SCRB) Karnataka**. Built entirely on a serverless microservices architecture utilizing the **Zoho Catalyst** cloud ecosystem, the platform streamlines document ingress, Zia OCR textual extraction, BNS legal reference mapping, and cryptographic audit logs to create a highly visual, secure "Situation Room" for police investigators.
+VAJRA.AI is a premium, serverless AI-powered Investigation Operating System custom-engineered for the **State Crime Record Bureau (SCRB), Karnataka**. The platform integrates document ingestion, Zia OCR textual extraction, BNS legal reference mapping, and cryptographic audit logs to create a highly visual, secure "Situation Room" for police investigators.
+
+*   **GitHub Repository**: [github.com/abi131205/VAJRA.AI](https://github.com/abi131205/VAJRA.AI)
+*   **Deployed Web Portal**: [project-rainfall-60073738508.development.catalystserverless.in/app/](https://project-rainfall-60073738508.development.catalystserverless.in/app/)
+
+---
+
+## ⚙️ Core Capabilities Implemented
+
+*   **Interactive Situation Room**: A unified investigative workspace displaying state-wide crime statistics, geographical distribution charts, and a dynamic case index directory.
+*   **Dynamic Entity Resolution Network**: Interactive D3-powered suspect association graphs mapping relations between suspects, phone SIM cards, vehicles, and evidence files.
+*   **Chronological Timeline Assembly**: Automatically reconstructs a case's chronological sequence of events from raw reports, logs, and officer check sheets.
+*   **Zia AI Legal Assistant**: A chat co-pilot that streams real-time BNS legal references, timelines, and prosecution arguments in clean markdown.
+*   **Cryptographic Audit Ledger**: An immutable, hash-chained ledger that logs case modifications and allows investigators to cryptographically verify database integrity.
+*   **Geospatial Hotspots Heatmap**: Maps crime forecast hotspots and coordinates across multiple districts in Karnataka (MG Road, Electronic City, Mysuru, Mangaluru, Hubballi, Belagavi, Kolar).
 
 ---
 
 ## 🎨 Visual Identity & Premium Design System
 
-Steering clear of standard cyberpunk tech-tropes and generic neon-blue AI widgets, VAJRA.AI utilizes an **editorial-luxury visual theme** inspired by premium consulting and modern architectural branding:
+The visual design utilizes an **editorial-luxury visual theme** representing security, authority, and official badge layouts:
 
-*   **Warm Ivory (`#FAF7F2`)**: Primary workspace surface, creating a human-centered, calm visual environment.
-*   **Charcoal (`#2D2424`)**: Deep structural text, borders, and layouts.
-*   **Dusty Gold / Amber (`#d97706`)**: Signature accent color representing security, authority, and official badge layouts.
-*   **Sandstone (`#C2A878`)** & **Soft Taupe (`#D9D2C7`)**: Secondary accents used for connection network nodes and information metadata tags.
+*   **Warm Ivory (`#FAF7F2`)**: Primary workspace surface.
+*   **Charcoal (`#2D2424`)**: Deep structural text, layout wrappers, and borders.
+*   **Dusty Gold / Amber (`#D97706`)**: Signature accent representing badge branding and status indicators.
+*   **Sandstone (`#C2A878`)** & **Soft Taupe (`#D9D2C7`)**: Accents used for visualizer nodes and tags.
 *   **Typography**: Serif headers (**Playfair Display**) combined with clean sans-serif content (**Plus Jakarta Sans / Inter**).
 
 ---
 
 ## 🚀 System Architecture & Data Flow
 
-VAJRA.AI uses a decoupled client-server architecture hosted on Zoho Catalyst:
+VAJRA.AI is built on a decoupled, serverless microservices architecture hosted on Zoho Catalyst:
 
 ```mermaid
 graph TD
     Client[React Frontend / App Client] -->|HTTPS Requests| APIGateway[Catalyst API Gateway]
     APIGateway -->|Express routing / JWT Auth| APIGatewayFunc[Advanced I/O: api_gateway]
-    APIGatewayFunc -->|Admin-scoped Datastore SDK| Datastore[(Catalyst Datastore)]
+    APIGatewayFunc -->|Admin-scoped Datastore SDK| Datastore[(Catalyst Data Store)]
     APIGatewayFunc -->|Internal invocation / Axios HTTP| Orchestrator[Basic I/O: agent_orchestrator]
     
     Orchestrator -->|Timeline Extraction Agent| Gemini[Gemini LLM / Zia NLP]
@@ -37,45 +50,22 @@ graph TD
     IngestEvent -->|Auto-parse OCR text| Datastore
 ```
 
-### Core Components
-1.  **Frontend Client (`vajra-frontend`)**: Built with React 19, Vite, and Zustand for global state management. Contains interactive D3.js suspect entity resolution network graphs, Leaflet geospatial hotspot heatmaps, and Zia AI Chat interfaces.
-2.  **API Gateway Controller (`api_gateway`)**: An Advanced I/O Express.js function handling routing, JWT token generation, bcrypt password hashing, and endpoint verification.
-3.  **Multi-Agent Orchestrator (`agent_orchestrator`)**: A Basic I/O function coordinating background AI intelligence agents (Timeline extraction, Cosine similarity matches, QuickML forecast hotspots, Zia translation services).
-4.  **Forensic Document Parser (`fir_ingest_event`)**: An Event function triggered automatically when new FIR or evidence documents are uploaded to the File Store, executing optical character recognition (Zia OCR) and extraction.
-
----
-
-## 🔒 Government-Grade Security & Authentication Engine
-
-A major architectural highlight of VAJRA.AI is its secure, authenticated **Officer Profile & Badge portal**. 
-
 ### 1. Database Privilege Elevation Bypass (Admin Scope Injection)
-Zoho Catalyst's default security rules block unauthenticated, anonymous API gateway requests from directly reading or writing to datastore tables. 
-*   **The Issue**: During user registration, the visitor is not yet logged in, causing direct datastore calls to throw a `PERMISSION_NEEDED` 401 error.
-*   **The Solution**: We upgraded the Node.js SDK to version **`v2.5.1`** and initialized the Catalyst application with an administrative scope configuration:
-    ```javascript
-    req.catalyst = catalyst.initialize(req, { scope: 'admin' });
-    ```
-    This elevates the execution privileges of the API route to the system **App Administrator** role, safely bypassing client-side database blocks during sign-up and credential verification.
+Zoho Catalyst's default security rules block unauthenticated API requests from reading or writing to datastore tables. To handle officer sign-up and credential verification safely, the backend initializes the Catalyst application with elevated administrative privileges:
 
-### 2. Distributed Routing Deadlock Prevention
-We eliminated potential concurrent execution bottlenecks in serverless functions (where calling one serverless function from another caused timeouts due to concurrency limits) by executing datastore operations directly within the `api_gateway` controller under the elevated `req.catalystAdmin` instance, ensuring instant execution and preventing `EXECUTION_TIME_EXCEEDED` failures.
+```javascript
+req.catalyst = catalyst.initialize(req, { scope: 'admin' });
+```
+This bypasses client-side database blocks during authentication while keeping the gateway secure.
 
----
-
-## ⚙️ Work Progress Status (100% Implemented & Verified)
-
-*   `[x]` **Database Engine**: Configured schema targets (`schema.sql`) for Zoho Catalyst Data Store (6 core tables: `CaseMaster`, `Employee`, `Rank`, `evidence`, `timeline_events`, `audit_log`).
-*   `[x]` **Security Upgrades**: Integrated `bcryptjs` hashing for officer password protection and `jsonwebtoken` for secure session authorization tokens.
-*   `[x]` **Situation Room UI**: Set up React portals, interactive D3 network graphs, timeline builders, and cryptographic validation dialog overlays.
-*   `[x]` **Agent Logic**: Integrated forensic document ingestion with active Zia OCR text extraction, Gemini/Zia LLM prompt analysis, and case similarity search indexing.
-*   `[x]` **Live Production Deployment**: Fully deployed functions and client assets to Zoho Catalyst Cloud with dynamic route resolution and verified data persistence.
+### 2. Forensic Document Parser (`fir_ingest_event`)
+An Event function triggered automatically when new FIR or evidence documents are uploaded to the File Store, executing optical character recognition (Zia OCR) and extraction.
 
 ---
 
-## 🚀 Running Deployed Mock & Dev Servers
+## 🛠️ How to Run Locally (Sandbox Mode)
 
-Follow these steps to launch the local sandbox on your machine:
+Follow these steps to launch the local development environment:
 
 ### 1. Launch Dev API Backend Wrapper
 ```bash
@@ -83,7 +73,7 @@ cd "vajra-backend/functions/api_gateway"
 npm install
 node local_server.js
 ```
-*Port `8080` will initialize a mock Catalyst SDK instance, ensuring all routing triggers function cleanly offline.*
+*Initializes an offline mock server on Port `8080` representing the Catalyst environment.*
 
 ### 2. Launch Vite React Frontend
 ```bash
@@ -91,27 +81,27 @@ cd "vajra-frontend"
 npm install
 npm run dev
 ```
-*Open `http://localhost:5173/` in Chrome. Turn off **Datathon Mock Mode** on the login page to run real database queries against your live backend.*
+*Open `http://localhost:5173/` in your browser. Turn off Datathon Mock Mode on the login page to run database queries against your live/local backend API.*
 
 ---
 
-## 🛠️ Deploying to Zoho Catalyst Cloud
+## 📦 Deploying to Zoho Catalyst Cloud
 
 ### A. Deploying Serverless Backend Functions
-Navigate to the backend project root and execute the deployment script using the Catalyst CLI:
+Execute the deployment using the Catalyst CLI in the backend root directory:
 ```bash
 cd "vajra-backend"
 catalyst deploy --only functions
 ```
 
 ### B. Deploying React Web Client Hosting
-To deploy the React client without Windows-specific path separator issues (`assets\filename.js` unsupported character errors):
-1. Build the production assets:
+To avoid path-separator issues during uploads:
+1. Build the production React assets:
    ```bash
    cd "vajra-frontend"
    npm run build
    ```
-2. Compress the `dist` directory into `frontend.zip` using Unix-style forward slash path separators:
+2. Compress the `dist` directory into a web-hosting archive:
    ```bash
    node zip.js
    ```
@@ -119,7 +109,7 @@ To deploy the React client without Windows-specific path separator issues (`asse
 
 ---
 
-## 👥 System Roles & Architecture Policy
+## 👥 System Track Contributions
 
 The system is organized into modular work components corresponding to critical domain responsibilities, mapped cleanly across the unified `main` repository branch:
 
