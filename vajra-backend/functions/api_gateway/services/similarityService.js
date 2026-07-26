@@ -92,6 +92,64 @@ class SimilarityService {
     }
 
     /**
+     * Computes a Trust/Reliability score for a match — distinct from similarity_score.
+     * Similarity measures HOW alike two MOs are; trust measures HOW MUCH the
+     * investigator should rely on that number given data quality.
+     *
+     * Weighted blend of:
+     *   50% - raw similarity score (the signal itself)
+     *   30% - overlap density (overlap tokens / union of unique tokens — penalizes
+     *          matches that only share 1-2 common words out of huge descriptions)
+     *   20% - data completeness (penalizes very short / sparse MO descriptions,
+     *          which produce noisy, unreliable cosine scores)
+     *
+     * @param {string} descA 
+     * @param {string} descB 
+     * @param {number} similarityScore 
+     * @returns {{trust_score: number, reliability_label: string}}
+     */
+    calculateTrustScore(descA, descB, similarityScore) {
+        const tokensA = this.tokenize(descA);
+        const tokensB = this.tokenize(descB);
+
+        if (tokensA.length === 0 || tokensB.length === 0) {
+            return { trust_score: 0.0, reliability_label: 'LOW' };
+        }
+
+        const setA = new Set(tokensA);
+        const setB = new Set(tokensB);
+        const overlapCount = [...setA].filter(t => setB.has(t)).length;
+        const unionCount = new Set([...setA, ...setB]).size;
+        const overlapDensity = unionCount > 0 ? overlapCount / unionCount : 0;
+
+        // Completeness: cases with richer MO descriptions yield more trustworthy
+        // similarity scores. Normalized against a 25-token "reasonably detailed" baseline.
+        const COMPLETENESS_BASELINE = 25;
+        const completenessA = Math.min(tokensA.length / COMPLETENESS_BASELINE, 1);
+        const completenessB = Math.min(tokensB.length / COMPLETENESS_BASELINE, 1);
+        const completeness = (completenessA + completenessB) / 2;
+
+        const trustScore =
+            (0.5 * similarityScore) +
+            (0.3 * overlapDensity) +
+            (0.2 * completeness);
+
+        const clamped = Math.max(0, Math.min(1, trustScore));
+        const rounded = parseFloat(clamped.toFixed(2));
+
+        // Label is derived from the ROUNDED value so the displayed number and
+        // label never disagree (e.g. avoid showing "0.50 / LOW" to an investigator).
+        let reliability_label = 'LOW';
+        if (rounded >= 0.75) reliability_label = 'HIGH';
+        else if (rounded >= 0.5) reliability_label = 'MEDIUM';
+
+        return {
+            trust_score: rounded,
+            reliability_label
+        };
+    }
+
+    /**
      * Finds and ranks other historical cases based on MO description similarity.
      * @param {object} catalystApp 
      * @param {string} targetCaseNumber 
@@ -126,11 +184,13 @@ class SimilarityService {
             for (const c of cases) {
                 if (c.CaseNo === targetId) continue; // skip comparing to itself
 
-                const score = this.compare(targetDesc, c.BriefFacts || '');
+                const compareDesc = c.BriefFacts || '';
+                const score = this.compare(targetDesc, compareDesc);
+                const { trust_score, reliability_label } = this.calculateTrustScore(targetDesc, compareDesc, score);
                 
                 // Extract overlapping keywords for front-end transparency
                 const targetTokens = this.tokenize(targetDesc);
-                const compareTokens = this.tokenize(c.BriefFacts || '');
+                const compareTokens = this.tokenize(compareDesc);
                 const overlap = targetTokens.filter(t => compareTokens.includes(t));
                 const uniqueOverlap = [...new Set(overlap)].slice(0, 4);
 
@@ -138,8 +198,10 @@ class SimilarityService {
                     case_number: c.CaseNo || c.CrimeNo,
                     title: c.title || 'Untitled Case',
                     similarity_score: parseFloat(score.toFixed(2)),
+                    trust_score,
+                    reliability_label,
                     overlapping_keys: uniqueOverlap,
-                    summary: c.BriefFacts ? c.BriefFacts.slice(0, 100) + '...' : ''
+                    summary: compareDesc ? compareDesc.slice(0, 100) + '...' : ''
                 });
             }
 
