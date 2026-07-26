@@ -119,29 +119,21 @@ To deploy the React client without Windows-specific path separator issues (`asse
 
 ---
 
-## 👥 Team Work Split & Repository Policy
+## 👥 System Roles & Architecture Policy
 
-Team status: **100% Completed and Verified for Datathon Presentation**.
+The system is organized into modular work components corresponding to critical domain responsibilities, mapped cleanly across the unified `main` repository branch:
 
 ```mermaid
 graph TD
-    Repo[Git Repo: main] -->|Abijith| AI[AI, OCR, Prompts & Forensic Data]
-    Repo -->|Abijith| Viz[D3 Graph Compiler & Entity Resolution -]
-    Repo -->|Vishaal| Fullstack[React, Zustand, Gateway & JWT Auth]
-    Repo -->|Tej Aditya| ML[Cosine Similarity & Admissibility Weights]
+    Repo[Git Repo: main] --> AI[AI, OCR, Prompts & Forensic Data]
+    Repo --> Viz[D3 Graph Compiler & Entity Resolution]
+    Repo --> Fullstack[React, Zustand, Gateway & JWT Auth]
+    Repo --> ML[Cosine Similarity & Admissibility Weights]
 ```
 
-### Work Split Assignments
+### Core Architecture Responsibilities
 
-#### 👤 Abijith (Lead & AI Architect) — *Completed 100%*
-*   **Focus**: Zia OCR Integration, LLM Connections, System Prompt layouts, and Forensic matching.
-*   **Visualizer Handover**: Took over and successfully built the interactive D3 Suspect Entity Resolution CDR Network graph component and linked dashboard nodes
-*   **Source Files**: `evidenceController.js`, `timelineAgent.js`, `legalAgent.js`, `networkService.js`, `NetworkGraphViewer.jsx`, `Dashboard.jsx`.
-
-#### 👤 Vishaal (Fullstack Dev + Deployment Config) — *Completed 100%*
-*   **Focus**: React pages, Zustand store actions, API fetch integrations, JWT bcrypt token verification, and Zoho Catalyst deployment config (sovereign cloud binding, environment/secrets setup).
-*   **Source Files**: `store.js`, `Login.jsx`, `Dashboard.jsx`, `authController.js`.
-
-#### 👤 Tej Aditya (ML Specialist) — *Completed 100%*
-*   **Focus**: Cosine distance case comparison algorithms and trust reliability scoring.
-*   **Source Files**: `caseController.js`, `similarityService.js`.
+*   **AI Orchestration**: Handles Zia OCR integrations, LLM pipelines, system prompt architecture, and forensic matching models.
+*   **Geospatial & Visualizations**: Interactive D3 Suspect Entity Resolution CDR Network graphs, Leaflet geospatial mappings, and dashboard layouts.
+*   **Authentication & State**: React client portals, Zustand state actions, API fetch wrappers, and JWT-bcrypt secure token authorizations.
+*   **Machine Learning**: Cosine distance case comparison algorithms, keyword overlap metrics, and trust-reliability scoring math.
