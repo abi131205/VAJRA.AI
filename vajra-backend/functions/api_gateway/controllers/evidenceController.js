@@ -17,7 +17,7 @@ const AuditService = require('../services/auditService');
 
 // ── POST /api/v1/evidence/upload ──────────────────────────────────────────────
 router.post('/upload', async (req, res) => {
-    const { case_id, evidence_type, fileName, fileBase64, uploaded_by } = req.body;
+    const { case_id, evidence_type, fileName, fileBase64, translate, uploaded_by } = req.body;
 
     if (!case_id || !evidence_type || !fileBase64) {
         return res.status(400).json({ error: 'Missing case_id, evidence_type, or fileBase64 string' });
@@ -58,6 +58,35 @@ router.post('/upload', async (req, res) => {
                             'At 02:00 AM on 05-07-2026, Constable confirmed door lock damage on locker 4B.';
         }
 
+        // ── 3.5. Kannada to English Translation ──────────────────────────────
+        if (translate || /[\u0C80-\u0CFF]/.test(extractedText)) {
+            console.log('[EvidenceController] Kannada text detected / translation requested.');
+            try {
+                const zia = req.catalyst.zia();
+                const translationResult = await zia.translateText({
+                    text:           extractedText,
+                    sourceLanguage: 'kn',
+                    targetLanguage: 'en'
+                });
+                extractedText = translationResult.translated_text || translationResult.text || extractedText;
+                console.log('[EvidenceController] Zia translation succeeded.');
+            } catch (translateErr) {
+                console.warn('[EvidenceController] Zia Translation bypassed, running local parser fallback:', translateErr.message);
+                const translations = [
+                  { kn: /ಪೊಲೀಸ್ ಠಾಣೆ/g, en: 'Police Station' },
+                  { kn: /ಫಿರ್ಯಾದುದಾರ/g, en: 'Complainant' },
+                  { kn: /ವಾಹನ ಕಳ್ಳತನ/g, en: 'Vehicle Theft' },
+                  { kn: /ಆರೋಪಿ/g, en: 'Accused' },
+                  { kn: /ಸ್ಥಳ ಪರಿಶೀಲನೆ/g, en: 'Spot Investigation' },
+                  { kn: /ಚಿನ್ನದ ಸರ/g, en: 'Gold Chain' },
+                  { kn: /ರಸ್ತೆ ದರೋಡೆ/g, en: 'Highway Robbery' }
+                ];
+                for (const t of translations) {
+                    extractedText = extractedText.replace(t.kn, t.en);
+                }
+            }
+        }
+
         // ── 4. Timeline reconstruction via Agent Orchestrator ─────────────────
         let parsedEvents = [];
         try {
@@ -75,7 +104,7 @@ router.post('/upload', async (req, res) => {
         } catch (funcErr) {
             console.warn('[EvidenceController] Orchestrator bypass, running local TimelineAgent:', funcErr.message);
             try {
-                const TimelineAgent = require('../../agent_orchestrator/agents/timelineAgent');
+                const TimelineAgent = require('../agents/timelineAgent');
                 const localAgent    = new TimelineAgent(req.catalyst);
                 parsedEvents        = await localAgent.extractEvents(extractedText);
             } catch (taErr) {

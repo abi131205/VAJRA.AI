@@ -68,9 +68,9 @@ function sseEnd(res) {
 
 // ── Inline fallback dispatch (when Circuits SDK is unavailable) ────────────
 async function inlineFallbackDispatch(catalystApp, intent, query, lang) {
-    const SQLAgent      = require('../../agent_orchestrator/agents/sqlAgent');
-    const TimelineAgent = require('../../agent_orchestrator/agents/timelineAgent');
-    const LegalAgent    = require('../../agent_orchestrator/agents/legalAgent');
+    const SQLAgent      = require('../agents/sqlAgent');
+    const TimelineAgent = require('../agents/timelineAgent');
+    const LegalAgent    = require('../agents/legalAgent');
 
     let result = {};
 

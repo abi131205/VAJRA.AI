@@ -1,8 +1,11 @@
 {
+  "name": "api_gateway",
+  "stack": "node20",
+  "type": "advancedio",
   "deployment": {
     "name": "api_gateway",
-    "stack": "node18",
-    "type": "AdvancedIO",
+    "stack": "node20",
+    "type": "advancedio",
     "memory": 256
   },
   "execution": {

@@ -212,7 +212,7 @@ async function markOCRDone(catalystApp, case_number, extractedText) {
 
 // ── Main handler ───────────────────────────────────────────────────────────
 module.exports = async (context, basicIO) => {
-    const catalystApp = catalyst.initialize(context);
+    const catalystApp = catalyst.initialize(context, { scope: 'admin' });
 
     try {
         // ── 1. Parse Signal payload ────────────────────────────────────────

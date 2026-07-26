@@ -59,7 +59,7 @@ const MOCK_USER = {
 module.exports = (allowedRoles = []) => {
     return (req, res, next) => {
         // ── 1. Extract Bearer token ────────────────────────────────────────
-        const authHeader = req.headers.authorization;
+        const authHeader = req.headers['x-authorization'] || req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
                 error: 'Authorization header missing or malformed. Expected: Bearer <token>'

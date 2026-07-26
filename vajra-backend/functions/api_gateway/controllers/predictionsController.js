@@ -22,7 +22,7 @@
 
 const express       = require('express');
 const router        = express.Router();
-const ForecastAgent = require('../../agent_orchestrator/agents/forecastAgent');
+const ForecastAgent = require('../agents/forecastAgent');
 
 // ── SHAP feature importances (static for demo; populated by QuickML in prod) ──
 const SHAP_FEATURES = [

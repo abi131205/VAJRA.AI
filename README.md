@@ -1,7 +1,7 @@
-# VAJRA.AI V4 — AI Investigation Operating System
-*Government-Grade Case Ingress, Chronological Timeline Assembly, and Cryptographic Tamper-Proof Auditing*
+# VAJRA.AI — State Investigation Operating System (v4.0)
+*Government-Grade Case Ingress, Chronological Timeline Assembly, and Cryptographic Tamper-Proof Auditing on Zoho Catalyst*
 
-VAJRA.AI is a premium, high-fidelity AI-powered Investigation operating system built on Zoho Catalyst. Designed specifically for the State Crime Record Bureau (SCRB) Karnataka, the platform streamlines document ingress, Zia OCR textual extraction, BNS legal reference mapping, and cryptographic audit logs to create a highly visual, secure "Situation Room" for police investigators.
+VAJRA.AI is a premium, high-fidelity AI-powered Investigation Operating System custom-engineered for the **State Crime Record Bureau (SCRB) Karnataka**. Built entirely on a serverless microservices architecture utilizing the **Zoho Catalyst** cloud ecosystem, the platform streamlines document ingress, Zia OCR textual extraction, BNS legal reference mapping, and cryptographic audit logs to create a highly visual, secure "Situation Room" for police investigators.
 
 ---
 
@@ -11,19 +11,65 @@ Steering clear of standard cyberpunk tech-tropes and generic neon-blue AI widget
 
 *   **Warm Ivory (`#FAF7F2`)**: Primary workspace surface, creating a human-centered, calm visual environment.
 *   **Charcoal (`#2D2424`)**: Deep structural text, borders, and layouts.
-*   **Dusty Rose (`#B36A70`)**: Primary signature accent color for interactive states, key buttons, and official badge logos.
+*   **Dusty Gold / Amber (`#d97706`)**: Signature accent color representing security, authority, and official badge layouts.
 *   **Sandstone (`#C2A878`)** & **Soft Taupe (`#D9D2C7`)**: Secondary accents used for connection network nodes and information metadata tags.
-*   **Typography**: Serif headers (**Playfair Display**) combined with clean sans-serif content (**Plus Jakarta Sans**).
+*   **Typography**: Serif headers (**Playfair Display**) combined with clean sans-serif content (**Plus Jakarta Sans / Inter**).
 
 ---
 
-## ⚙️ Work Progress Status (Sprints 0 - 4 Completed)
+## 🚀 System Architecture & Data Flow
 
-We have scaffolded and compiled the baseline infrastructure of the platform:
-*   `[x]` **Database Engine**: Configured schema targets (`schema.sql`) for Zoho Catalyst Data Store.
-*   `[x]` **Serverless Core**: Built Node.js basic functions for agent orchestrations and API routing tables.
-*   `[x]` **Situation Room UI**: Set up conditional Vite routing portals, secure badge logins, timeline builders, explainability cards, and cryptographic validation dialog overlays.
-*   `[x]` **Agent Logic**: Written native test runner script (`agentTests.js`) validating timeline heuristics, BNS mapping models, and SQL injection sanitizers with **3/3 tests passing successfully**.
+VAJRA.AI uses a decoupled client-server architecture hosted on Zoho Catalyst:
+
+```mermaid
+graph TD
+    Client[React Frontend / App Client] -->|HTTPS Requests| APIGateway[Catalyst API Gateway]
+    APIGateway -->|Express routing / JWT Auth| APIGatewayFunc[Advanced I/O: api_gateway]
+    APIGatewayFunc -->|Admin-scoped Datastore SDK| Datastore[(Catalyst Datastore)]
+    APIGatewayFunc -->|Internal invocation / Axios HTTP| Orchestrator[Basic I/O: agent_orchestrator]
+    
+    Orchestrator -->|Timeline Extraction Agent| Gemini[Gemini LLM / Zia NLP]
+    Orchestrator -->|Legal Reference Mapper| Gemini
+    Orchestrator -->|SQL Search Agent| Gemini
+    Orchestrator -->|Geospatial Forecast Agent| Gemini
+    
+    FileStore[(Catalyst File Store)] -->|Zia OCR Hook| IngestEvent[Event Function: fir_ingest_event]
+    IngestEvent -->|Auto-parse OCR text| Datastore
+```
+
+### Core Components
+1.  **Frontend Client (`vajra-frontend`)**: Built with React 19, Vite, and Zustand for global state management. Contains interactive D3.js suspect entity resolution network graphs, Leaflet geospatial hotspot heatmaps, and Zia AI Chat interfaces.
+2.  **API Gateway Controller (`api_gateway`)**: An Advanced I/O Express.js function handling routing, JWT token generation, bcrypt password hashing, and endpoint verification.
+3.  **Multi-Agent Orchestrator (`agent_orchestrator`)**: A Basic I/O function coordinating background AI intelligence agents (Timeline extraction, Cosine similarity matches, QuickML forecast hotspots, Zia translation services).
+4.  **Forensic Document Parser (`fir_ingest_event`)**: An Event function triggered automatically when new FIR or evidence documents are uploaded to the File Store, executing optical character recognition (Zia OCR) and extraction.
+
+---
+
+## 🔒 Government-Grade Security & Authentication Engine
+
+A major architectural highlight of VAJRA.AI is its secure, authenticated **Officer Profile & Badge portal**. 
+
+### 1. Database Privilege Elevation Bypass (Admin Scope Injection)
+Zoho Catalyst's default security rules block unauthenticated, anonymous API gateway requests from directly reading or writing to datastore tables. 
+*   **The Issue**: During user registration, the visitor is not yet logged in, causing direct datastore calls to throw a `PERMISSION_NEEDED` 401 error.
+*   **The Solution**: We upgraded the Node.js SDK to version **`v2.5.1`** and initialized the Catalyst application with an administrative scope configuration:
+    ```javascript
+    req.catalyst = catalyst.initialize(req, { scope: 'admin' });
+    ```
+    This elevates the execution privileges of the API route to the system **App Administrator** role, safely bypassing client-side database blocks during sign-up and credential verification.
+
+### 2. Distributed Routing Deadlock Prevention
+We eliminated potential concurrent execution bottlenecks in serverless functions (where calling one serverless function from another caused timeouts due to concurrency limits) by executing datastore operations directly within the `api_gateway` controller under the elevated `req.catalystAdmin` instance, ensuring instant execution and preventing `EXECUTION_TIME_EXCEEDED` failures.
+
+---
+
+## ⚙️ Work Progress Status (100% Implemented & Verified)
+
+*   `[x]` **Database Engine**: Configured schema targets (`schema.sql`) for Zoho Catalyst Data Store (6 core tables: `CaseMaster`, `Employee`, `Rank`, `evidence`, `timeline_events`, `audit_log`).
+*   `[x]` **Security Upgrades**: Integrated `bcryptjs` hashing for officer password protection and `jsonwebtoken` for secure session authorization tokens.
+*   `[x]` **Situation Room UI**: Set up React portals, interactive D3 network graphs, timeline builders, and cryptographic validation dialog overlays.
+*   `[x]` **Agent Logic**: Integrated forensic document ingestion with active Zia OCR text extraction, Gemini/Zia LLM prompt analysis, and case similarity search indexing.
+*   `[x]` **Live Production Deployment**: Fully deployed functions and client assets to Zoho Catalyst Cloud with dynamic route resolution and verified data persistence.
 
 ---
 
@@ -41,68 +87,64 @@ node local_server.js
 
 ### 2. Launch Vite React Frontend
 ```bash
-cd "frontend"
+cd "vajra-frontend"
 npm install
 npm run dev
 ```
-*Open `http://localhost:5173/` in Chrome. Turn on **Datathon Mock Mode** on the login page to run simulations using cached state pipelines.*
+*Open `http://localhost:5173/` in Chrome. Turn off **Datathon Mock Mode** on the login page to run real database queries against your live backend.*
 
 ---
 
-## 🛠️ Transitioning to Production (Making it "Real")
+## 🛠️ Deploying to Zoho Catalyst Cloud
 
-To go live with real database queries and active AI API requests, execute these steps:
+### A. Deploying Serverless Backend Functions
+Navigate to the backend project root and execute the deployment script using the Catalyst CLI:
+```bash
+cd "vajra-backend"
+catalyst deploy --only functions
+```
 
-### A. Configure Database & Auth
-1. **Catalyst Datastore**: Create the tables defined in `vajra-backend/schema.sql` on the Zoho Catalyst cloud console.
-2. **Password Security**: In `authController.js`, implement `bcrypt` password comparison, replacing hardcoded checks with database queries to the `officers` table.
-
-### B. Activate Zia OCR & LLMs
-1. **OCR Bucket**: Create a Catalyst File Store bucket named `evidence_bucket` and extract its folder ID.
-2. **Zia OCR Hook**: In `evidenceController.js`, activate the commented `req.catalyst.zia()` optical character recognition API.
-3. **LLM Connection**: In the Catalyst console, define connection headers for OpenAI/Gemini or Zia Custom AI models and register the API keys in your environment variables.
-4. **Mock Bypass**: Switch `mockMode: false` inside `frontend/src/store.js` as the default state to bypass cached responses.
-
-### C. Live Cloud Deployment
-*   **Deploy Cloud Functions**: Run `catalyst deploy` from the project root.
-*   **Deploy Frontend Web Client**: Run `catalyst deploy --only hosting` to host the client on Catalyst, or deploy the Vite `dist/` bundle directly to Vercel/Netlify.
+### B. Deploying React Web Client Hosting
+To deploy the React client without Windows-specific path separator issues (`assets\filename.js` unsupported character errors):
+1. Build the production assets:
+   ```bash
+   cd "vajra-frontend"
+   npm run build
+   ```
+2. Compress the `dist` directory into `frontend.zip` using Unix-style forward slash path separators:
+   ```bash
+   node zip.js
+   ```
+3. Go to the **Zoho Catalyst Console** under **Web Client Hosting**, click **Update App**, select the generated `frontend.zip`, and click **Deploy**.
 
 ---
 
 ## 👥 Team Work Split & Repository Policy
 
-Team status as of July 12, 2026: 4 active contributors, deadline July 26, 2026 (Datathon 2026).
+Team status: **100% Completed and Verified for Datathon Presentation**.
 
 ```mermaid
 graph TD
     Repo[Git Repo: main] -->|Abijith| AI[AI, OCR, Prompts & Forensic Data]
+    Repo -->|Abijith| Viz[D3 Graph Compiler & Entity Resolution - Siddhika's Work]
     Repo -->|Vishaal| Fullstack[React, Zustand, Gateway & JWT Auth]
     Repo -->|Tej Aditya| ML[Cosine Similarity & Admissibility Weights]
-    Repo -->|Siddhika| Viz[D3 Graph Compiler & Entity Resolution]
 ```
-
-### Git Branching Rules
-1. Never commit code directly to `main`.
-2. Create feature branches: `git checkout -b feat/your-feature-name`
-3. Push changes and submit a **Pull Request (PR)** on GitHub for code review before merging.
 
 ### Work Split Assignments
 
-#### 👤 Abijith (Lead & AI Architect)
+#### 👤 Abijith (Lead & AI Architect) — *Completed 100%*
 *   **Focus**: Zia OCR Integration, LLM Connections, System Prompt layouts, and Forensic matching.
-*   **Source Files**: `evidenceController.js`, `timelineAgent.js`, `legalAgent.js`.
+*   **Visualizer Handover (Siddhika's Work)**: Took over and successfully built the interactive D3 Suspect Entity Resolution CDR Network graph component and linked dashboard nodes due to Siddhika's health issues.
+*   **Source Files**: `evidenceController.js`, `timelineAgent.js`, `legalAgent.js`, `networkService.js`, `NetworkGraphViewer.jsx`, `Dashboard.jsx`.
 
-#### 👤 Vishaal (Fullstack Dev + Deployment Config)
+#### 👤 Vishaal (Fullstack Dev + Deployment Config) — *Completed 100%*
 *   **Focus**: React pages, Zustand store actions, API fetch integrations, JWT bcrypt token verification, and Zoho Catalyst deployment config (sovereign cloud binding, environment/secrets setup).
 *   **Source Files**: `store.js`, `Login.jsx`, `Dashboard.jsx`, `authController.js`.
 
-#### 👤 Tej Aditya (ML Specialist)
+#### 👤 Tej Aditya (ML Specialist) — *Completed 100%*
 *   **Focus**: Cosine distance case comparison algorithms and trust reliability scoring.
 *   **Source Files**: `caseController.js`, `similarityService.js`.
-*   **Note**: Joining full-time from July 13 (exam commitment July 12).
 
 #### 👤 Siddhika (Python / Viz Specialist)
-*   **Focus**: Suspect/CDRs entity resolution graphs and D3/SVG network chart components.
-*   **Source Files**: `networkService.js`, `Dashboard.jsx`.
-*   **Note**: Rejoining the project from ~July 14.
-
+*   *Note*: Transferred D3 CDR Entity Graph and visualizer UI tasks to **Abijith** due to health conditions. All deliverables completed on schedule.

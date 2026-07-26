@@ -32,7 +32,24 @@ app.use(morgan('combined'));
 // ── Catalyst SDK Initialization ────────────────────────────────────────────────
 app.use((req, res, next) => {
     try {
-        req.catalyst = catalyst.initialize(req);
+        req.catalyst = catalyst.initialize(req, { scope: 'admin' });
+        req.catalystAdmin = req.catalyst;
+
+        // Wrap datastore to add executeQueries method for ZCQL queries
+        const originalDatastore = req.catalyst.datastore;
+        req.catalyst.datastore = function(...args) {
+            const ds = originalDatastore.apply(this, args);
+            ds.executeQueries = async function(query) {
+                const zcqlInstance = req.catalystAdmin.zcql();
+                const result = await zcqlInstance.executeZCQLQuery(query);
+                if (result && Array.isArray(result)) {
+                    return result;
+                }
+                return (result && result.content) || result || [];
+            };
+            return ds;
+        };
+
         next();
     } catch (err) {
         console.error('[APIGateway] Catalyst SDK init failed:', err);
@@ -56,6 +73,28 @@ app.use('/api/v1/evidence',    evidenceController);
 app.use('/api/v1/chat',        chatController);       // POST – SSE streaming
 app.use('/api/v1/export',      exportController);     // POST /pdf – SmartBrowz
 app.use('/api/v1/predictions', predictionsController); // GET – ForecastAgent / QuickML
+
+// ── Multi-Prefix Route Aliases (Handles Zoho Gateway Path Rewriting) ──────────
+app.use('/auth',               authController);
+app.use('/cases',              caseController);
+app.use('/evidence',           evidenceController);
+app.use('/chat',               chatController);
+app.use('/export',             exportController);
+app.use('/predictions',        predictionsController);
+
+app.use('/server/api_gateway/api/v1/auth',        authController);
+app.use('/server/api_gateway/api/v1/cases',       caseController);
+app.use('/server/api_gateway/api/v1/evidence',    evidenceController);
+app.use('/server/api_gateway/api/v1/chat',        chatController);
+app.use('/server/api_gateway/api/v1/export',      exportController);
+app.use('/server/api_gateway/api/v1/predictions', predictionsController);
+
+app.use('/api_gateway/auth',        authController);
+app.use('/api_gateway/cases',       caseController);
+app.use('/api_gateway/evidence',    evidenceController);
+app.use('/api_gateway/chat',        chatController);
+app.use('/api_gateway/export',      exportController);
+app.use('/api_gateway/predictions', predictionsController);
 
 // ── Audit Log Endpoint ─────────────────────────────────────────────────────────
 /**

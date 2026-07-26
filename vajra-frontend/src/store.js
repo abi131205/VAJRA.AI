@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const API = '/api/v1';
+const isProd = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const API = isProd ? '/server/api_gateway/api/v1' : '/api/v1';
 
 // ─── Auth helpers ─────────────────────────────────────────────
 const loadFromStorage = (key, fallback = null) => {
@@ -107,7 +108,7 @@ export const useStore = create((set, get) => ({
   login: async (email, password) => {
     set({ loading: true, error: null });
 
-    if (get().mockMode || email === 'inspector.rajesh@karnataka.gov.in') {
+    if (get().mockMode) {
       const mockUser = { id: '999', name: 'Rajesh Kumar', role: 'INSPECTOR', station_id: 'BLR_STN_04' };
       const mockToken = 'mock-jwt-token-xyz';
       localStorage.setItem('vajra_user', JSON.stringify(mockUser));
@@ -123,6 +124,20 @@ export const useStore = create((set, get) => ({
       localStorage.setItem('vajra_token', data.token);
       set({ user: data.officer, token: data.token, isAuthenticated: true, loading: false });
       get().addNotification(`Officer ${data.officer.name} authorized.`);
+      return true;
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message;
+      set({ error: msg, loading: false });
+      return false;
+    }
+  },
+
+  register: async (name, email, password, kgid, rankId) => {
+    set({ loading: true, error: null });
+    try {
+      await axios.post(`${API}/auth/register`, { name, email, password, kgid, rank_id: rankId });
+      set({ loading: false });
+      get().addNotification(`Officer ${name} registered successfully. You can now login.`);
       return true;
     } catch (err) {
       const msg = err.response?.data?.error || err.message;
@@ -165,11 +180,50 @@ export const useStore = create((set, get) => ({
     }
     try {
       const { data } = await axios.get(`${API}/cases`, {
-        headers: { Authorization: `Bearer ${get().token}` }
+        headers: { 'X-Authorization': `Bearer ${get().token}` }
       });
       set({ cases: data, loading: false });
     } catch (err) {
       set({ error: err.message, loading: false });
+    }
+  },
+
+  createCase: async (caseNumber, title, description = '') => {
+    set({ loading: true });
+    if (get().mockMode) {
+      await new Promise(r => setTimeout(r, 200));
+      const newCase = {
+        ROWID: Math.random().toString(),
+        case_number: caseNumber,
+        title: title,
+        description: description,
+        status: 'OPEN',
+        assigned_officer: get().user?.id || '999',
+        created_time: new Date().toISOString()
+      };
+      set(s => ({
+        cases: [newCase, ...s.cases],
+        loading: false
+      }));
+      get().addNotification(`Case ${caseNumber} created locally (Mock).`);
+      return true;
+    }
+    try {
+      await axios.post(`${API}/cases`, {
+        case_number: caseNumber,
+        title: title,
+        description: description,
+        assigned_officer: get().user?.id || '999'
+      }, {
+        headers: { 'X-Authorization': `Bearer ${get().token}` }
+      });
+      await get().fetchCases();
+      get().addNotification(`Case ${caseNumber} initialized in database.`);
+      return true;
+    } catch (err) {
+      set({ error: err.message, loading: false });
+      get().addNotification(`Failed to initialize case: ${err.message}`);
+      return false;
     }
   },
 
@@ -183,7 +237,7 @@ export const useStore = create((set, get) => ({
     }
     try {
       const { data } = await axios.get(`${API}/cases/${caseObj.case_number}/timeline`, {
-        headers: { Authorization: `Bearer ${get().token}` }
+        headers: { 'X-Authorization': `Bearer ${get().token}` }
       });
       set({ timeline: data.events || [], networkData: { nodes: [], edges: [] }, loading: false });
       get().addNotification(`Loaded case ${caseObj.case_number}.`);
@@ -260,7 +314,7 @@ export const useStore = create((set, get) => ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          ...(token ? { 'X-Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({ query: prompt, lang: 'en', session_id: `sess_${Date.now()}` })
       });
@@ -345,7 +399,7 @@ export const useStore = create((set, get) => ({
     }
     try {
       const { data } = await axios.get(`${API}/audit`, {
-        headers: { Authorization: `Bearer ${get().token}` }
+        headers: { 'X-Authorization': `Bearer ${get().token}` }
       });
       // Handle both old (array) and new ({ entries, chain_status }) response shapes
       const logs = Array.isArray(data) ? data : (data.entries || []);
@@ -377,9 +431,9 @@ export const useStore = create((set, get) => ({
     }
     try {
       const { data } = await axios.get(`${API}/predictions`, {
-        headers: { Authorization: `Bearer ${get().token}` }
+        headers: { 'X-Authorization': `Bearer ${get().token}` }
       });
-      set({ hotspots: data, hotspotsLoading: false });
+      set({ hotspots: data.hotspots || [], hotspotsLoading: false });
     } catch (err) {
       set({ hotspotsLoading: false });
       get().addNotification(`Hotspot fetch failed: ${err.message}`);
@@ -394,7 +448,7 @@ export const useStore = create((set, get) => ({
   setUploadStatus: (status, progress = 0) =>
     set({ uploadStatus: status, uploadProgress: progress }),
 
-  uploadEvidence: async (file, caseId) => {
+  uploadEvidence: async (file, caseId, translate = false) => {
     if (!file || !caseId) return;
     const { mockMode, token, addNotification } = get();
     set({ uploadStatus: 'uploading', uploadProgress: 0, uploadResult: null });
@@ -464,10 +518,11 @@ export const useStore = create((set, get) => ({
               evidence_type: 'DOCUMENT',
               fileName:      file.name,
               fileBase64:    base64Str,
+              translate:     translate,
               uploaded_by:   useStore.getState().user?.id || 'SYSTEM',
             },
             {
-              headers: { Authorization: `Bearer ${token}` },
+              headers: { 'X-Authorization': `Bearer ${token}` },
               onUploadProgress: (e) => {
                 if (e.lengthComputable) {
                   // Map network progress from 50–100 %
@@ -491,7 +546,7 @@ export const useStore = create((set, get) => ({
             }
             try {
               const statusRes = await axios.get(`${API}/evidence/${evidenceId}/status`, {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { 'X-Authorization': `Bearer ${token}` },
               });
               if (statusRes.data.status === 'PROCESSED') {
                 set(s => ({
@@ -533,7 +588,7 @@ export const useStore = create((set, get) => ({
     }
     try {
       const { data } = await axios.get(`${API}/cases/${caseNumber}/legal`, {
-        headers: { Authorization: `Bearer ${get().token}` }
+        headers: { 'X-Authorization': `Bearer ${get().token}` }
       });
       set({ legalSections: data });
     } catch { /* keep existing */ }
@@ -553,7 +608,7 @@ export const useStore = create((set, get) => ({
     }
     try {
       const { data } = await axios.get(`${API}/cases/${caseNumber}/similar`, {
-        headers: { Authorization: `Bearer ${get().token}` }
+        headers: { 'X-Authorization': `Bearer ${get().token}` }
       });
       set({ similarCases: data });
     } catch { /* keep existing */ }
@@ -580,7 +635,7 @@ export const useStore = create((set, get) => ({
     try {
       const response = await fetch(`${API}/cases/${activeCase.case_number}/report`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 'X-Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('PDF generation failed');
       const blob = await response.blob();

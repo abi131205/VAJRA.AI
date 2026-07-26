@@ -68,7 +68,7 @@ function SituationRoom() {
   const {
     cases, activeCase, timeline, networkData,
     legalSections, similarCases, fetchCases, setActiveCase, fetchLegalSections, fetchSimilarCases,
-    generatePDF, addNotification, notifications,
+    generatePDF, addNotification, notifications, createCase,
   } = useStore();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -91,11 +91,14 @@ function SituationRoom() {
     c.case_number.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreateCase = (e) => {
+  const handleCreateCase = async (e) => {
     e.preventDefault();
     if (!newFIR || !newTitle) return;
-    addNotification(`Case ${newFIR} initialized.`);
-    setNewFIR(''); setNewTitle('');
+    const success = await createCase(newFIR, newTitle, 'New case file opened from SCRB Situational Control Room.');
+    if (success) {
+      setNewFIR(''); 
+      setNewTitle('');
+    }
   };
 
   return (
@@ -370,12 +373,55 @@ function SituationRoom() {
   );
 }
 
+const getShortLabel = (id) => {
+  const map = {
+    room: 'Situation',
+    chat: 'Co-Pilot',
+    network: 'Graph',
+    map: 'Map',
+    ingest: 'Ingest',
+    audit: 'Ledger'
+  };
+  return map[id] || '';
+};
+
 // ─── Main Dashboard ───────────────────────────────────────────
 export default function Dashboard() {
   const { user, mockMode, logout, notifications } = useStore();
   const [activeTab, setActiveTab] = useState('room');
   const [online, setOnline]       = useState(navigator.onLine);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [latency, setLatency]     = useState(24);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [shiftSeconds, setShiftSeconds] = useState(0);
+
+  // Ping Latency Simulator
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLatency(prev => Math.max(12, Math.min(80, prev + Math.floor(Math.random() * 9) - 4)));
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Live Bengaluru Clock
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Shift Timer
+  useEffect(() => {
+    const timer = setInterval(() => setShiftSeconds(s => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatDuration = (sec) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  };
 
   useEffect(() => {
     const on  = () => setOnline(true);
@@ -400,7 +446,8 @@ export default function Dashboard() {
   const unreadCount = notifications.length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-base)', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-base)', overflow: 'hidden', position: 'relative' }}>
+      <div className="scan-line" />
 
       {/* ── Header ── */}
       <header style={{
@@ -443,10 +490,43 @@ export default function Dashboard() {
               title={`${tab.label} (Alt+${tab.shortcut})`}
             >
               {tab.icon}
-              {tab.label}
+              <span className="tab-text-full">{tab.label}</span>
+              <span className="tab-text-short">{getShortLabel(tab.id)}</span>
             </button>
           ))}
         </nav>
+
+        {/* HUD Widgets */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 10px', borderLeft: '1px solid var(--bg-border)', borderRight: '1px solid var(--bg-border)', padding: '0 10px', height: '60%' }}>
+          {/* Active Shift Stopwatch */}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 80 }}>
+            <span style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.05em' }}>SHIFT TIMER</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }} className="hud-cyan-glow">
+              {formatDuration(shiftSeconds)}
+            </span>
+          </div>
+
+          {/* Connection Speed Ping */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ position: 'relative', width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }}>
+              <div className="ping-pulse-element" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.05em' }}>NODE LATENCY</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+                {latency} ms
+              </span>
+            </div>
+          </div>
+
+          {/* Bengaluru Clock */}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 60 }}>
+            <span style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.05em' }}>BENGALURU TIME</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)', fontFamily: 'var(--font-mono)' }} className="hud-glow">
+              {currentTime.toLocaleTimeString('en-US', { hour12: false })}
+            </span>
+          </div>
+        </div>
 
         {/* Right controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>

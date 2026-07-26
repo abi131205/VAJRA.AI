@@ -97,13 +97,16 @@ export default function CaseIngestDropzone() {
     setUploadStatus('idle');
   }
 
+  const [translate, setTranslate] = useState(false);
+
   const handleIngest = async () => {
     if (!pendingFile) return;
     if (!activeCase) { setError('Select an active case before ingesting evidence.'); return; }
     setError('');
     try {
-      await uploadEvidence(pendingFile, activeCase.case_number);
+      await uploadEvidence(pendingFile, activeCase.case_number, translate);
       setPendingFile(null);
+      setTranslate(false);
     } catch (err) {
       setError(err.message || 'Upload failed');
     }
@@ -111,6 +114,7 @@ export default function CaseIngestDropzone() {
 
   const handleReset = () => {
     setPendingFile(null);
+    setTranslate(false);
     setError('');
     setUploadStatus('idle');
   };
@@ -233,6 +237,22 @@ export default function CaseIngestDropzone() {
             <div style={{ fontSize: '0.5625rem', color: 'var(--text-muted)', marginTop: 4 }}>
               {uploadStatus === 'uploading' ? 'Encrypted upload via AES-256 transit layer' : 'Zia OCR — extracting text and parsing timeline events'}
             </div>
+          </div>
+        )}
+
+        {/* Translation Toggle */}
+        {pendingFile && uploadStatus === 'idle' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px', marginBottom: 8, flexShrink: 0 }}>
+            <input
+              type="checkbox"
+              id="translate-kannada"
+              checked={translate}
+              onChange={e => setTranslate(e.target.checked)}
+              style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+            />
+            <label htmlFor="translate-kannada" style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600 }}>
+              Translate Kannada log reports to English
+            </label>
           </div>
         )}
 

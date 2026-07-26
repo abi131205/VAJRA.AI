@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { useStore } from '../../store';
-import { ZoomIn, ZoomOut, Maximize2, RefreshCw, Info } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RefreshCw, Info, User, Skull, Radio, FileCheck2 } from 'lucide-react';
 
 // ─── Node color / size config ──────────────────────────────────
 const NODE_CFG = {
@@ -38,12 +38,108 @@ function toGraphData(networkData) {
   return { nodes, links };
 }
 
-// ─── Node detail sidebar ───────────────────────────────────────
+// ─── Suspect Dossier View ─────────────────────────────────────
+function SuspectDossier({ node, onClose }) {
+  const addNotification = useStore(s => s.addNotification);
+  const [intercepted, setIntercepted] = useState(false);
+  const [warrantGenerated, setWarrantGenerated] = useState(false);
+
+  const handleIntercept = () => {
+    setIntercepted(true);
+    addNotification(`[Surveillance] Device intercept initiated on +91-${node.properties?.phone || '991204X'} (Suspect: ${node.label}).`);
+  };
+
+  const handleWarrant = () => {
+    setWarrantGenerated(true);
+    addNotification(`[Warrant] Digital arrest manifest compiled for Suspect: ${node.label} (BNS Sec. 303).`);
+  };
+
+  return (
+    <div className="glass-panel-elevated dossier-panel" style={{
+      padding: '1rem', width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12,
+      border: '1px solid rgba(239,68,68,0.2)', background: 'linear-gradient(180deg, var(--bg-elevated), #1c1316)',
+      overflowY: 'auto'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.625rem', fontWeight: 700, color: '#ef4444', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Skull size={10} /> SUSPECT DOSSIER
+        </span>
+        <button className="btn-ghost" onClick={onClose} style={{ padding: 2 }}>✕</button>
+      </div>
+
+      {/* Mugshot reticle */}
+      <div className="profile-reticle" style={{ height: 110 }}>
+        <div className="profile-reticle-crosshair profile-reticle-tl" />
+        <div className="profile-reticle-crosshair profile-reticle-tr" />
+        <div className="profile-reticle-crosshair profile-reticle-bl" />
+        <div className="profile-reticle-crosshair profile-reticle-br" />
+        <User size={48} strokeWidth={1} color="rgba(239, 68, 68, 0.4)" />
+        <div style={{ position: 'absolute', bottom: 4, left: 6, right: 6, display: 'flex', justifyContent: 'space-between', fontSize: '0.5rem', color: 'rgba(239, 68, 68, 0.6)', fontFamily: 'var(--font-mono)' }}>
+          <span>ID: {node.id.toUpperCase()}</span>
+          <span>SYS_VERIFIED</span>
+        </div>
+      </div>
+
+      {/* Threat Meter */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: '0.625rem' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Threat Index</span>
+          <span style={{ fontWeight: 700, color: '#ef4444', fontFamily: 'var(--font-mono)' }}>CRITICAL</span>
+        </div>
+        <div style={{ height: 4, borderRadius: 2, background: 'var(--bg-border)', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: '92%', background: 'linear-gradient(90deg, #f59e0b, #ef4444)' }} />
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginBottom: 2 }}>
+          {node.label}
+        </div>
+        <div style={{ fontSize: '0.5625rem', color: '#ef4444', fontWeight: 700, letterSpacing: '0.04em' }}>
+          PRIMARY ACCOMPLICE / ACCUSED
+        </div>
+      </div>
+
+      {/* Attributes */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.6875rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--bg-border)', paddingBottom: 4 }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Alias:</span>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{node.properties?.alias || 'Unknown'}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--bg-border)', paddingBottom: 4 }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Phone:</span>
+          <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{node.properties?.phone || 'N/A'}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--bg-border)', paddingBottom: 4 }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Target Role:</span>
+          <span style={{ color: 'var(--text-primary)' }}>{node.properties?.role || 'Accomplice'}</span>
+        </div>
+      </div>
+
+      {/* Cyber Operations */}
+      <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <button className="btn-secondary" onClick={handleIntercept} disabled={intercepted} style={{ width: '100%', padding: '6px', justifyContent: 'center', fontSize: '0.6875rem', gap: 6, borderColor: intercepted ? 'var(--success)' : '#ef444444', color: intercepted ? 'var(--success)' : 'var(--text-primary)' }}>
+          <Radio size={12} />
+          {intercepted ? 'Intercept Active' : 'Intercept Device'}
+        </button>
+        <button className="btn-primary" onClick={handleWarrant} disabled={warrantGenerated} style={{ width: '100%', padding: '6px', justifyContent: 'center', fontSize: '0.6875rem', gap: 6, background: '#ef4444', color: '#fff' }}>
+          <FileCheck2 size={12} />
+          {warrantGenerated ? 'Warrant Drafted' : 'Arrest Warrant'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Node detail sidebar switcher ──────────────────────────────
 function NodeDetail({ node, onClose }) {
   if (!node) return null;
+  if (node.type === 'SUSPECT') {
+    return <SuspectDossier node={node} onClose={onClose} />;
+  }
   const cfg = NODE_CFG[node.type] || NODE_CFG.DEFAULT;
   return (
-    <div className="glass-panel-elevated" style={{
+    <div className="glass-panel-elevated dossier-panel" style={{
       padding: '1rem', width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

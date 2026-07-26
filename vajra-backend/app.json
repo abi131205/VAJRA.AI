@@ -2,19 +2,19 @@
   "functions": [
     {
       "name": "api_gateway",
-      "runtime": "nodejs18",
+      "runtime": "nodejs20",
       "memory": 256,
       "timeout": 30
     },
     {
       "name": "agent_orchestrator",
-      "runtime": "nodejs18",
+      "runtime": "nodejs20",
       "memory": 512,
       "timeout": 60
     },
     {
       "name": "fir_ingest_event",
-      "runtime": "nodejs18",
+      "runtime": "nodejs20",
       "memory": 256,
       "timeout": 30
     }

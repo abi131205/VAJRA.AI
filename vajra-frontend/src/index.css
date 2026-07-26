@@ -264,14 +264,13 @@ h1, h2, h3, h4, h5, h6 {
   margin-left: 2px;
 }
 
-/* ─── Tab Navigation ────────────────────────────────────────── */
 .tab-nav-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0.5rem 0.875rem;
+  gap: 4px;
+  padding: 0.375rem 0.625rem;
   border-radius: 6px;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -367,4 +366,87 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 0.15;
   animation: scan 4s linear infinite;
   pointer-events: none;
+  z-index: 10;
 }
+
+/* ─── HUD Styling Classes ───────────────────────────────────── */
+.hud-glow {
+  text-shadow: 0 0 8px rgba(245,158,11,0.4);
+}
+.hud-cyan-glow {
+  text-shadow: 0 0 8px rgba(34,211,238,0.4);
+}
+.scan-grid {
+  background-image: 
+    linear-gradient(rgba(37,42,56,0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37,42,56,0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+@keyframes ping-pulse {
+  0% { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.ping-pulse-element {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: ping-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+.ping-pulse-warning {
+  background: var(--warning);
+}
+.ping-pulse-danger {
+  background: var(--danger);
+}
+
+/* ─── Responsive Tab Labels ─────────────────────────────────── */
+.tab-text-short {
+  display: none;
+}
+@media (max-width: 1440px) {
+  .tab-text-full {
+    display: none;
+  }
+  .tab-text-short {
+    display: inline;
+  }
+}
+
+/* ─── Suspect Dossier Animations & Layouts ─────────────────── */
+@keyframes slide-in {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.dossier-panel {
+  animation: slide-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.profile-reticle {
+  position: relative;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.05), transparent);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-reticle::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 4px; right: 4px; bottom: 4px;
+  border: 1px dashed rgba(239, 68, 68, 0.12);
+  pointer-events: none;
+}
+.profile-reticle-crosshair {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  pointer-events: none;
+}
+.profile-reticle-tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+.profile-reticle-tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+.profile-reticle-bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+.profile-reticle-br { bottom: 8px; right: 8px; border-left: none; border-top: none; }

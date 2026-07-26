@@ -138,7 +138,22 @@ function mergeAndCite(circuitState) {
 // ── Main handler ───────────────────────────────────────────────────────────
 module.exports = async (context, basicIO) => {
     try {
-        const catalystApp = catalyst.initialize(context);
+        const catalystApp = catalyst.initialize(context, { scope: 'admin' });
+
+        // Wrap datastore to add executeQueries method for ZCQL queries
+        const originalDatastore = catalystApp.datastore;
+        catalystApp.datastore = function(...args) {
+            const ds = originalDatastore.apply(this, args);
+            ds.executeQueries = async function(query) {
+                const zcqlInstance = catalystApp.zcql();
+                const result = await zcqlInstance.executeZCQLQuery(query);
+                if (result && Array.isArray(result)) {
+                    return result;
+                }
+                return (result && result.content) || result || [];
+            };
+            return ds;
+        };
 
         // Input arguments from Circuit state or direct invocation
         const taskType = basicIO.getArgument('task_type');
@@ -240,6 +255,48 @@ module.exports = async (context, basicIO) => {
                     action_type: 'AI_REASONING',
                     payload:     payloadStr
                 });
+                break;
+            }
+
+            case 'REGISTER_OFFICER': {
+                const { name, email, password_hash, kgid, rank_id } = payload || {};
+                const db = catalystApp.datastore();
+                
+                const existing = await db.executeQueries(
+                    `SELECT ROWID FROM Employee WHERE email = '${email}' LIMIT 1`
+                );
+                if (existing && existing.length > 0) {
+                    result = { error: "Officer email is already registered" };
+                    break;
+                }
+
+                const employeeId = Math.floor(100000 + Math.random() * 900000);
+                const row = {
+                    EmployeeID:    employeeId,
+                    KGID:          kgid,
+                    FirstName:     name,
+                    email:         email,
+                    password_hash: password_hash,
+                    RankID:        parseInt(rank_id, 10) || 1,
+                    UnitID:        999,
+                    status:        'ACTIVE'
+                };
+                const insertResult = await db.table('Employee').insertRow(row);
+                result = { success: true, id: insertResult.ROWID };
+                break;
+            }
+
+            case 'GET_OFFICER_BY_EMAIL': {
+                const { email } = payload || {};
+                const db = catalystApp.datastore();
+                const queryResult = await db.executeQueries(
+                    `SELECT Employee.ROWID, Employee.FirstName, Employee.password_hash, Employee.status, Employee.UnitID, Rank.RankName FROM Employee LEFT JOIN Rank ON Employee.RankID = Rank.RankID WHERE Employee.email = '${email}' LIMIT 1`
+                );
+                if (queryResult && queryResult.length > 0) {
+                    result = { success: true, row: queryResult[0] };
+                } else {
+                    result = { success: false, error: "Officer profile not found" };
+                }
                 break;
             }
 

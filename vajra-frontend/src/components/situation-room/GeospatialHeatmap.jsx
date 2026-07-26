@@ -3,9 +3,21 @@ import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaf
 import { useStore } from '../../store';
 import { Layers, MapPin, TrendingUp, RefreshCw, AlertTriangle } from 'lucide-react';
 
-// ─── Dark tile URL (CartoDB dark matter) ───────────────────────
-const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const TILE_ATTR  = '© OpenStreetMap contributors © CARTO';
+// ─── Map Tile configurations ──────────────────────────────────
+const THEMES = {
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attr: '© OpenStreetMap contributors © CARTO'
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr: '© Esri · Earthstar Geographics'
+  },
+  streets: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attr: '© OpenStreetMap contributors'
+  }
+};
 
 // ─── Hotspot color by intensity ────────────────────────────────
 function hotspotColor(intensity) {
@@ -55,6 +67,7 @@ export default function GeospatialHeatmap() {
   const { hotspots, hotspotsLoading, fetchHotspots } = useStore();
   const [activeTypes, setActiveTypes] = useState(new Set(['ALL']));
   const [showPulse, setShowPulse]     = useState(true);
+  const [mapTheme, setMapTheme]       = useState('dark');
 
   useEffect(() => { fetchHotspots(); }, []);
 
@@ -120,7 +133,7 @@ export default function GeospatialHeatmap() {
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
         >
-          <TileLayer url={DARK_TILES} attribution={TILE_ATTR} />
+          <TileLayer key={mapTheme} url={THEMES[mapTheme].url} attribution={THEMES[mapTheme].attr} />
           <AutoFit hotspots={visibleHotspots} />
 
           {visibleHotspots.map((h, i) => {
@@ -163,6 +176,30 @@ export default function GeospatialHeatmap() {
             );
           })}
         </MapContainer>
+
+        {/* Map Theme Toggle */}
+        <div style={{
+          position: 'absolute', bottom: 12, right: 12, zIndex: 500,
+          display: 'flex', gap: 4, background: 'rgba(19, 22, 30, 0.95)',
+          border: '1px solid var(--bg-border)', borderRadius: 6, padding: 3,
+          boxShadow: 'var(--shadow-lg)'
+        }}>
+          <button className={`btn-ghost`}
+            style={{ padding: '3px 8px', fontSize: '0.625rem', fontWeight: 700, minWidth: 60, height: 22, border: mapTheme === 'dark' ? '1px solid var(--accent-border)' : 'none', borderRadius: 4, background: mapTheme === 'dark' ? 'var(--accent-dim)' : 'transparent', color: mapTheme === 'dark' ? 'var(--accent)' : 'var(--text-secondary)', cursor: 'pointer' }}
+            onClick={() => setMapTheme('dark')}>
+            Dark
+          </button>
+          <button className={`btn-ghost`}
+            style={{ padding: '3px 8px', fontSize: '0.625rem', fontWeight: 700, minWidth: 60, height: 22, border: mapTheme === 'satellite' ? '1px solid var(--accent-border)' : 'none', borderRadius: 4, background: mapTheme === 'satellite' ? 'var(--accent-dim)' : 'transparent', color: mapTheme === 'satellite' ? 'var(--accent)' : 'var(--text-secondary)', cursor: 'pointer' }}
+            onClick={() => setMapTheme('satellite')}>
+            Satellite
+          </button>
+          <button className={`btn-ghost`}
+            style={{ padding: '3px 8px', fontSize: '0.625rem', fontWeight: 700, minWidth: 60, height: 22, border: mapTheme === 'streets' ? '1px solid var(--accent-border)' : 'none', borderRadius: 4, background: mapTheme === 'streets' ? 'var(--accent-dim)' : 'transparent', color: mapTheme === 'streets' ? 'var(--accent)' : 'var(--text-secondary)', cursor: 'pointer' }}
+            onClick={() => setMapTheme('streets')}>
+            Streets
+          </button>
+        </div>
 
         {/* Pulse toggle */}
         <button

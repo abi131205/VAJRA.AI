@@ -1,8 +1,11 @@
 {
+  "name": "agent_orchestrator",
+  "stack": "node20",
+  "type": "basicio",
   "deployment": {
     "name": "agent_orchestrator",
-    "stack": "node18",
-    "type": "BasicIO",
+    "stack": "node20",
+    "type": "basicio",
     "memory": 512
   },
   "execution": {

@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useStore } from '../../store';
 import {
   Send, Cpu, Loader2, SquareX, BookOpen, GitBranch,
-  ChevronRight, CheckCircle, Circle, AlertTriangle, Network, FileText
+  ChevronRight, CheckCircle, Circle, AlertTriangle, Network, FileText,
+  Mic, MicOff
 } from 'lucide-react';
 
 // ─── Agent pipeline config ─────────────────────────────────────
@@ -238,8 +239,44 @@ function ContextPanel({ lastMsg }) {
 export default function ChatDashboard() {
   const { chatMessages, chatStreaming, streamChatResponse } = useStore();
   const [input, setInput] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = 'en-IN'; // Optimized for Indian English accents/names
+
+      rec.onstart = () => setIsListening(true);
+      rec.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(prev => (prev ? `${prev} ${transcript}` : transcript));
+      };
+      rec.onerror = (e) => {
+        console.error('[SpeechRecognition] Error:', e);
+        setIsListening(false);
+      };
+      rec.onend = () => setIsListening(false);
+      recognitionRef.current = rec;
+    }
+  }, []);
+
+  const toggleListen = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in this browser. Try Chrome or Edge.');
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+  };
 
   // Scroll to bottom on each new message / stream update
   useEffect(() => {
@@ -311,6 +348,24 @@ export default function ChatDashboard() {
               onFocus={e => { e.target.style.borderColor = 'var(--accent)'; }}
               onBlur={e  => { e.target.style.borderColor = 'var(--bg-border)'; }}
             />
+            <button
+              onClick={toggleListen}
+              disabled={chatStreaming}
+              className="btn-secondary"
+              style={{
+                padding: '0.625rem',
+                borderRadius: 8,
+                flexShrink: 0,
+                borderColor: isListening ? 'var(--danger)' : 'var(--bg-border)',
+                background: isListening ? 'var(--danger-dim)' : 'var(--bg-elevated)',
+                color: isListening ? 'var(--danger)' : 'var(--text-secondary)',
+                boxShadow: isListening ? 'var(--glow-danger)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+              title={isListening ? 'Stop Listening' : 'Dictate Query (Voice)'}
+            >
+              {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+            </button>
             <button
               onClick={handleSend}
               disabled={chatStreaming || !input.trim()}
