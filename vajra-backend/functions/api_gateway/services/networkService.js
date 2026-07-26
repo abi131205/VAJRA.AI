@@ -20,7 +20,9 @@ class NetworkService {
             const query = `SELECT ROWID, evidence_id, evidence_type, uploaded_by FROM evidence WHERE case_id = '${caseNumber}'`;
             const evidenceRows = await db.executeQueries(query);
             
-            return this.buildNetworkGraph(caseNumber, evidenceRows);
+            if (evidenceRows && evidenceRows.length > 0) {
+                return this.buildNetworkGraph(caseNumber, evidenceRows);
+            }
         } catch (err) {
             console.warn("Network query failed, falling back to mock graph mapping:", err.message);
         }

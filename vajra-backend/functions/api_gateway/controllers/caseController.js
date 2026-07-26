@@ -147,9 +147,95 @@ async function seedDatabase(db) {
 }
 
 // ── GET /api/v1/cases ─────────────────────────────────────────────────────────
+const getFallbackCases = () => [
+    {
+        ROWID: '1', case_number: 'FIR_12_2026',
+        title: 'Electronic City Commercial Robbery',
+        description: 'Armed burglary during midnight hours at central storage locker facility. CCTV identified black container truck.',
+        status: 'UNDER_INVESTIGATION', assigned_officer: '999',
+        created_time: '2026-07-04T10:00:00.000Z',
+        latitude: 12.8399, longitude: 77.6770
+    },
+    {
+        ROWID: '2', case_number: 'FIR_15_2026',
+        title: 'Mysuru Palace Heritage Theft',
+        description: 'Palace vault burglary involving historical artifacts and gold ornaments. Intercepted cargo carrying forged manifests.',
+        status: 'OPEN', assigned_officer: '',
+        created_time: '2026-07-05T08:00:00.000Z',
+        latitude: 12.2743, longitude: 76.6785
+    },
+    {
+        ROWID: '3', case_number: 'FIR_08_2026',
+        title: 'Koramangala ATM Skimming Network',
+        description: 'Multi-location ATM tampering. Suspects using Bluetooth-enabled skimming devices. 3 arrests made.',
+        status: 'CHARGE_SHEETED', assigned_officer: '998',
+        created_time: '2026-06-28T06:00:00.000Z',
+        latitude: 12.9352, longitude: 77.6245
+    },
+    {
+        ROWID: '4', case_number: 'FIR_20_2026',
+        title: 'Mangaluru Port Gold Smuggling',
+        description: 'Maritime entry and transit of gold bars hidden inside containerized cargo. Customs checks bypassed.',
+        status: 'UNDER_INVESTIGATION', assigned_officer: '999',
+        created_time: '2026-07-10T14:30:00.000Z',
+        latitude: 12.8706, longitude: 74.8822
+    },
+    {
+        ROWID: '5', case_number: 'FIR_32_2026',
+        title: 'Hubballi Junction Train Cargo Heist',
+        description: 'Organized train compartment burglary at the central freight yard container hub.',
+        status: 'OPEN', assigned_officer: '',
+        created_time: '2026-07-18T23:15:00.000Z',
+        latitude: 15.3647, longitude: 75.1240
+    },
+    {
+        ROWID: '6', case_number: 'FIR_45_2026',
+        title: 'Belagavi Border Checkpost Narcotics',
+        description: 'Contraband seizure and suspect interception at border checkpoint during routine vehicle checks.',
+        status: 'UNDER_INVESTIGATION', assigned_officer: '999',
+        created_time: '2026-07-22T03:45:00.000Z',
+        latitude: 15.8497, longitude: 74.4977
+    },
+    {
+        ROWID: '7', case_number: 'FIR_21_2026',
+        title: 'Peenya Industrial Warehouse Burglary',
+        description: 'Armed burglary during midnight hours at industrial storage locker facility. CCTV identified black container truck leaving the compound.',
+        status: 'OPEN', assigned_officer: '997',
+        created_time: '2026-07-10T23:15:00.000Z',
+        latitude: 13.0324, longitude: 77.5273
+    },
+    {
+        ROWID: '8', case_number: 'FIR_23_2026',
+        title: 'Hoskote Storage Yard Break-in',
+        description: 'Midnight burglary at a storage facility involving forced locker entry. Witnesses reported a black truck parked near the container yard.',
+        status: 'UNDER_INVESTIGATION', assigned_officer: '996',
+        created_time: '2026-07-14T01:40:00.000Z',
+        latitude: 13.0697, longitude: 77.7982
+    },
+    {
+        ROWID: '9', case_number: 'FIR_19_2026',
+        title: 'Marathahalli Cyber Fraud Case',
+        description: 'Phishing emails used to extract banking credentials from corporate employees over several weeks.',
+        status: 'OPEN', assigned_officer: '',
+        created_time: '2026-07-02T09:00:00.000Z',
+        latitude: 12.9562, longitude: 77.7011
+    },
+    {
+        ROWID: '10', case_number: 'FIR_25_2026',
+        title: 'Yelahanka Chain Snatching',
+        description: 'Two-wheeler borne miscreants snatched a gold chain from a pedestrian near a bus stop in broad daylight.',
+        status: 'CHARGE_SHEETED', assigned_officer: '995',
+        created_time: '2026-06-20T17:30:00.000Z',
+        latitude: 13.1008, longitude: 77.5963
+    }
+];
+
+// ── GET /api/v1/cases ─────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
     const { status, assigned_officer } = req.query;
     const db = req.catalyst.datastore();
+
+    let combinedCases = [];
 
     // 1. Try querying KSP CaseMaster schema first
     try {
@@ -165,7 +251,7 @@ router.get('/', async (req, res) => {
         }
 
         if (queryResult && queryResult.length > 0) {
-            const mappedCases = queryResult.map(c => {
+            combinedCases = queryResult.map(c => {
                 const data = c.CaseMaster || c;
                 return {
                     ROWID:            String(data.ROWID),
@@ -179,126 +265,54 @@ router.get('/', async (req, res) => {
                     longitude:        Number(data.longitude || 77.5946)
                 };
             });
-            return res.status(200).json(mappedCases);
         }
     } catch (kspErr) {
         console.warn('[CaseController] CaseMaster query failed, trying cases table:', kspErr.message);
     }
 
     // 2. Try querying custom cases schema
-    try {
-        let query = 'SELECT ROWID, case_number, title, description, status, assigned_officer, created_time, latitude, longitude FROM cases';
-        const conditions = [];
-        if (status)           conditions.push(`status = '${status}'`);
-        if (assigned_officer) conditions.push(`assigned_officer = '${assigned_officer}'`);
-        if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
+    if (combinedCases.length === 0) {
+        try {
+            let query = 'SELECT ROWID, case_number, title, description, status, assigned_officer, created_time, latitude, longitude FROM cases';
+            const conditions = [];
+            if (status)           conditions.push(`status = '${status}'`);
+            if (assigned_officer) conditions.push(`assigned_officer = '${assigned_officer}'`);
+            if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
 
-        let casesData = await db.executeQueries(query);
+            let casesData = await db.executeQueries(query);
 
-        if (casesData && casesData.length === 0) {
-            const seeded = await seedDatabase(db);
-            if (seeded) {
-                casesData = await db.executeQueries(query);
+            if (casesData && casesData.length === 0) {
+                const seeded = await seedDatabase(db);
+                if (seeded) {
+                    casesData = await db.executeQueries(query);
+                }
             }
-        }
 
-        if (casesData && casesData.length > 0) {
-            return res.status(200).json(casesData.map(c => {
-                const data = c.cases || c;
-                return {
-                    ...data,
-                    latitude:  Number(data.latitude || 12.9716),
-                    longitude: Number(data.longitude || 77.5946)
-                };
-            }));
+            if (casesData && casesData.length > 0) {
+                combinedCases = casesData.map(c => {
+                    const data = c.cases || c;
+                    return {
+                        ...data,
+                        latitude:  Number(data.latitude || 12.9716),
+                        longitude: Number(data.longitude || 77.5946)
+                    };
+                });
+            }
+        } catch (casesErr) {
+            console.warn('[CaseController] Custom cases table query also failed:', casesErr.message);
         }
-    } catch (casesErr) {
-        console.warn('[CaseController] Custom cases table query also failed:', casesErr.message);
     }
 
-    // 3. Resilient fallback: return static mock cases if no tables are populated/accessible
-    return res.status(200).json([
-        {
-            ROWID: '1', case_number: 'FIR_12_2026',
-            title: 'Electronic City Commercial Robbery',
-            description: 'Armed burglary during midnight hours at central storage locker facility. CCTV identified black container truck.',
-            status: 'UNDER_INVESTIGATION', assigned_officer: '999',
-            created_time: '2026-07-04T10:00:00.000Z',
-            latitude: 12.8399, longitude: 77.6770
-        },
-        {
-            ROWID: '2', case_number: 'FIR_15_2026',
-            title: 'Mysuru Palace Heritage Theft',
-            description: 'Palace vault burglary involving historical artifacts and gold ornaments. Intercepted cargo carrying forged manifests.',
-            status: 'OPEN', assigned_officer: '',
-            created_time: '2026-07-05T08:00:00.000Z',
-            latitude: 12.2743, longitude: 76.6785
-        },
-        {
-            ROWID: '3', case_number: 'FIR_08_2026',
-            title: 'Koramangala ATM Skimming Network',
-            description: 'Multi-location ATM tampering. Suspects using Bluetooth-enabled skimming devices. 3 arrests made.',
-            status: 'CHARGE_SHEETED', assigned_officer: '998',
-            created_time: '2026-06-28T06:00:00.000Z',
-            latitude: 12.9352, longitude: 77.6245
-        },
-        {
-            ROWID: '4', case_number: 'FIR_20_2026',
-            title: 'Mangaluru Port Gold Smuggling',
-            description: 'Maritime entry and transit of gold bars hidden inside containerized cargo. Customs checks bypassed.',
-            status: 'UNDER_INVESTIGATION', assigned_officer: '999',
-            created_time: '2026-07-10T14:30:00.000Z',
-            latitude: 12.8706, longitude: 74.8822
-        },
-        {
-            ROWID: '5', case_number: 'FIR_32_2026',
-            title: 'Hubballi Junction Train Cargo Heist',
-            description: 'Organized train compartment burglary at the central freight yard container hub.',
-            status: 'OPEN', assigned_officer: '',
-            created_time: '2026-07-18T23:15:00.000Z',
-            latitude: 15.3647, longitude: 75.1240
-        },
-        {
-            ROWID: '6', case_number: 'FIR_45_2026',
-            title: 'Belagavi Border Checkpost Narcotics',
-            description: 'Contraband seizure and suspect interception at border checkpoint during routine vehicle checks.',
-            status: 'UNDER_INVESTIGATION', assigned_officer: '999',
-            created_time: '2026-07-22T03:45:00.000Z',
-            latitude: 15.8497, longitude: 74.4977
-        },
-        {
-            ROWID: '7', case_number: 'FIR_21_2026',
-            title: 'Peenya Industrial Warehouse Burglary',
-            description: 'Armed burglary during midnight hours at industrial storage locker facility. CCTV identified black container truck leaving the compound.',
-            status: 'OPEN', assigned_officer: '997',
-            created_time: '2026-07-10T23:15:00.000Z',
-            latitude: 13.0324, longitude: 77.5273
-        },
-        {
-            ROWID: '8', case_number: 'FIR_23_2026',
-            title: 'Hoskote Storage Yard Break-in',
-            description: 'Midnight burglary at a storage facility involving forced locker entry. Witnesses reported a black truck parked near the container yard.',
-            status: 'UNDER_INVESTIGATION', assigned_officer: '996',
-            created_time: '2026-07-14T01:40:00.000Z',
-            latitude: 13.0697, longitude: 77.7982
-        },
-        {
-            ROWID: '9', case_number: 'FIR_19_2026',
-            title: 'Marathahalli Cyber Fraud Case',
-            description: 'Phishing emails used to extract banking credentials from corporate employees over several weeks.',
-            status: 'OPEN', assigned_officer: '',
-            created_time: '2026-07-02T09:00:00.000Z',
-            latitude: 12.9562, longitude: 77.7011
-        },
-        {
-            ROWID: '10', case_number: 'FIR_25_2026',
-            title: 'Yelahanka Chain Snatching',
-            description: 'Two-wheeler borne miscreants snatched a gold chain from a pedestrian near a bus stop in broad daylight.',
-            status: 'CHARGE_SHEETED', assigned_officer: '995',
-            created_time: '2026-06-20T17:30:00.000Z',
-            latitude: 13.1008, longitude: 77.5963
+    // Merge database results with our high-fidelity fallbacks to make sure we show all 10 cases in both modes
+    const fallbackList = getFallbackCases();
+    const finalCases = [...combinedCases];
+    for (const f of fallbackList) {
+        if (!finalCases.some(c => c.case_number === f.case_number)) {
+            finalCases.push(f);
         }
-    ]);
+    }
+
+    return res.status(200).json(finalCases);
 });
 
 const formatDateTime = (date) => {

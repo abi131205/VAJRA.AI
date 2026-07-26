@@ -122,17 +122,21 @@ router.get('/', async (req, res) => {
         // Combine database hot points and agent hot points
         let mergedHotspots = [...databaseHotspots, ...agentHotspots];
 
-        // ── 3. Karnataka-wide Fallback List (MG Road, Mysore, Mangalore, Hubli, Belgaum, Kolar) ──
-        if (mergedHotspots.length === 0) {
-            mergedHotspots.push(
-                { lat: 12.9716, lng: 77.5946, intensity: 0.90, type: 'Robbery',       count: 14, area: 'Bengaluru (MG Road)', risk_level: 'HIGH',   confidence: 0.87 },
-                { lat: 12.8399, lng: 77.6770, intensity: 0.85, type: 'Burglary',      count: 11, area: 'Electronic City',      risk_level: 'HIGH',   confidence: 0.82 },
-                { lat: 12.2958, lng: 76.6394, intensity: 0.80, type: 'Theft',         count: 12, area: 'Mysuru (Palace)',      risk_level: 'HIGH',   confidence: 0.85 },
-                { lat: 12.9141, lng: 74.8560, intensity: 0.75, type: 'Smuggling',     count: 9,  area: 'Mangaluru (Port)',     risk_level: 'MEDIUM', confidence: 0.78 },
-                { lat: 15.3647, lng: 75.1240, intensity: 0.70, type: 'Cargo Theft',   count: 8,  area: 'Hubballi Junction',    risk_level: 'MEDIUM', confidence: 0.74 },
-                { lat: 15.8497, lng: 74.4977, intensity: 0.65, type: 'Narcotics',     count: 6,  area: 'Belagavi Checkpost',   risk_level: 'MEDIUM', confidence: 0.70 },
-                { lat: 13.1378, lng: 78.1356, intensity: 0.50, type: 'Mining Dispute', count: 5,  area: 'Kolar Gold Fields',    risk_level: 'LOW',    confidence: 0.65 }
-            );
+        // ── 3. Karnataka-wide Base Coordinates (MG Road, Mysore, Mangalore, Hubli, Belgaum, Kolar) ──
+        const baseHotspots = [
+            { lat: 12.9716, lng: 77.5946, intensity: 0.90, type: 'Robbery',       count: 14, area: 'Bengaluru (MG Road)', risk_level: 'HIGH',   confidence: 0.87 },
+            { lat: 12.8399, lng: 77.6770, intensity: 0.85, type: 'Burglary',      count: 11, area: 'Electronic City',      risk_level: 'HIGH',   confidence: 0.82 },
+            { lat: 12.2958, lng: 76.6394, intensity: 0.80, type: 'Theft',         count: 12, area: 'Mysuru (Palace)',      risk_level: 'HIGH',   confidence: 0.85 },
+            { lat: 12.9141, lng: 74.8560, intensity: 0.75, type: 'Smuggling',     count: 9,  area: 'Mangaluru (Port)',     risk_level: 'MEDIUM', confidence: 0.78 },
+            { lat: 15.3647, lng: 75.1240, intensity: 0.70, type: 'Cargo Theft',   count: 8,  area: 'Hubballi Junction',    risk_level: 'MEDIUM', confidence: 0.74 },
+            { lat: 15.8497, lng: 74.4977, intensity: 0.65, type: 'Narcotics',     count: 6,  area: 'Belagavi Checkpost',   risk_level: 'MEDIUM', confidence: 0.70 },
+            { lat: 13.1378, lng: 78.1356, intensity: 0.50, type: 'Mining Dispute', count: 5,  area: 'Kolar Gold Fields',    risk_level: 'LOW',    confidence: 0.65 }
+        ];
+
+        for (const base of baseHotspots) {
+            if (!mergedHotspots.some(h => Math.abs(h.lat - base.lat) < 0.05 && Math.abs(h.lng - base.lng) < 0.05)) {
+                mergedHotspots.push(base);
+            }
         }
 
         return res.status(200).json({
